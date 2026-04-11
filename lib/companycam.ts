@@ -78,7 +78,7 @@ export async function findStarbucksProject(
 
   // Filter to projects that actually contain this store number in the name
   const matches = storeResults.filter((p) =>
-    p.name.includes(`#${storeNumber}`)
+    p.name && p.name.includes(`#${storeNumber}`) && !p.name.toLowerCase().startsWith('workiz')
   );
 
   if (matches.length > 0) {
@@ -95,14 +95,18 @@ export async function findStarbucksProject(
   // Fallback: search by address
   if (address) {
     const addrResults = await searchProjects(address);
-    if (addrResults.length > 0) {
+    // Filter out Workiz-named projects — they are pre-assigned placeholders with 0 photos
+    const validAddrResults = addrResults.filter((p) =>
+      !p.name || !p.name.toLowerCase().startsWith('workiz')
+    );
+    if (validAddrResults.length > 0) {
       // Prefer results that mention the store number or "Starbucks"
-      const starbucksMatch = addrResults.find((p) =>
+      const starbucksMatch = validAddrResults.find((p) =>
         p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
       );
       if (starbucksMatch) return starbucksMatch;
-      // Otherwise return the first result (likely matched by address)
-      return addrResults[0];
+      // Otherwise return first non-Workiz result (likely address-named project with real photos)
+      return validAddrResults[0];
     }
   }
 
