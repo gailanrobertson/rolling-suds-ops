@@ -1,4 +1,5 @@
 const API_TOKEN = process.env.WORKIZ_API_TOKEN || '';
+const API_SECRET = process.env.WORKIZ_API_SECRET || '';
 const BASE_URL = 'https://api.workiz.com/api/v1';
 
 async function workizGet(endpoint: string) {
@@ -6,21 +7,23 @@ async function workizGet(endpoint: string) {
   const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Workiz GET error ${res.status}: ${text.substring(0, 200)}`);
+    throw new Error(`Workiz GET error ${res.status}: ${text.substring(0, 300)}`);
   }
   return res.json();
 }
 
 async function workizPost(endpoint: string, data: Record<string, unknown>) {
   const url = `${BASE_URL}/${API_TOKEN}/${endpoint}`;
+  // auth_secret is required in POST body for Workiz write operations
+  const body = { auth_secret: API_SECRET, ...data };
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Workiz POST error ${res.status}: ${text.substring(0, 200)}`);
+    throw new Error(`Workiz POST error ${res.status}: ${text.substring(0, 300)}`);
   }
   return res.json();
 }
@@ -47,6 +50,7 @@ export async function createJob(data: {
   Country?: string;
   PostalCode?: string;
   JobType?: string;
+  JobSource?: string;
   JobDescription?: string;
   JobNotes?: string;
 }) {
