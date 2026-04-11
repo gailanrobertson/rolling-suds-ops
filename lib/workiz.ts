@@ -1,32 +1,26 @@
 const API_TOKEN = process.env.WORKIZ_API_TOKEN || '';
-const API_SECRET = process.env.WORKIZ_API_SECRET || '';
-
-// GET requests use api.workiz.com
-const GET_BASE = 'https://api.workiz.com/api/v1';
-// POST requests use app.workiz.com
-const POST_BASE = 'https://app.workiz.com/api/v1';
+const BASE_URL = 'https://api.workiz.com/api/v1';
 
 async function workizGet(endpoint: string) {
-  const url = `${GET_BASE}/${API_TOKEN}/${endpoint}`;
+  const url = `${BASE_URL}/${API_TOKEN}/${endpoint}`;
   const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Workiz API error ${res.status}: ${text}`);
+    throw new Error(`Workiz GET error ${res.status}: ${text.substring(0, 200)}`);
   }
   return res.json();
 }
 
 async function workizPost(endpoint: string, data: Record<string, unknown>) {
-  const url = `${POST_BASE}/${API_TOKEN}/${endpoint}`;
-  const body = { auth_secret: API_SECRET, ...data };
+  const url = `${BASE_URL}/${API_TOKEN}/${endpoint}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(data),
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Workiz API error ${res.status}: ${text}`);
+    throw new Error(`Workiz POST error ${res.status}: ${text.substring(0, 200)}`);
   }
   return res.json();
 }
