@@ -4,6 +4,7 @@ import { downloadPhotoAsBase64 } from '@/lib/companycam';
 import { generateInvoicePDF } from '@/lib/pdf/invoice';
 import { generateWorkOrderPDF } from '@/lib/pdf/work-order';
 import { getJobById, updateJob } from '@/lib/db';
+import { createJob as createWorkizJob, updateJob as updateWorkizJob } from '@/lib/workiz';
 import { EmailLog } from '@/lib/types';
 
 interface SendRequest {
@@ -108,7 +109,37 @@ export async function POST(req: NextRequest) {
         test: !!body.test,
       });
 
-      return NextResponse.json({ success: true, message: 'Documents email sent' });
+      // Auto-sync to Workiz on real (non-test) sends
+    if (!body.test && body.workOrderData && body.invoiceData) {
+      try {
+        const wd = body.workOrderData;
+        const sDate = wd.serviceDate || new Date().toISOString().split('T')[0];
+        const start = wd.startTime || '22:00';
+        const stop = wd.stopTime || '23:00';
+        const workizJob = await createWorkizJob({
+          JobDateTime: `${sDate} ${start}:00`,
+          JobEndDateTime: `${sDate} ${stop}:00`,
+          JobTotalPrice: body.invoiceData.price || 0,
+          JobType: 'Power Washing',
+          JobSource: 'Starbucks',
+          FirstName: 'Starbucks',
+          LastName: `#${body.storeNumber}`,
+          Phone: wd.storePhone || '',
+          Address: wd.address || '',
+          City: wd.city || '',
+          State: wd.state || '',
+          PostalCode: body.invoiceData.zip || '',
+          JobNotes: `WO# ${body.woNumber} | Invoice# ${body.invoiceData.invoiceNumber || ''} | Tech: ${wd.technician || ''} | ${start}-${stop}`,
+        });
+        if (workizJob?.UUID) {
+          await updateWorkizJob(workizJob.UUID, { Status: 'completed' });
+          if (body.jobId) await updateJob(body.jobId, { workizJobId: workizJob.UUID });
+        }
+      } catch (workizErr) {
+        console.error('Workiz sync failed (non-blocking):', workizErr);
+      }
+    }
+    return NextResponse.json({ success: true, message: 'Documents email sent' });
 
     } else if (body.type === 'photos') {
       if (!body.photoUrls || body.photoUrls.length === 0) {
