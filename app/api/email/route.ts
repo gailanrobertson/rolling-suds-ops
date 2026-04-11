@@ -4,7 +4,6 @@ import { downloadPhotoAsBase64 } from '@/lib/companycam';
 import { generateInvoicePDF } from '@/lib/pdf/invoice';
 import { generateWorkOrderPDF } from '@/lib/pdf/work-order';
 import { getJobById, updateJob } from '@/lib/db';
-import { createJob as createWorkizJob, updateJob as updateWorkizJob } from '@/lib/workiz';
 import { EmailLog } from '@/lib/types';
 
 interface SendRequest {
@@ -109,33 +108,7 @@ export async function POST(req: NextRequest) {
         test: !!body.test,
       });
 
-      // Auto-sync to Workiz on real (non-test) sends
-    if (!body.test && body.workOrderData && body.invoiceData) {
-      try {
-        const wd = body.workOrderData;
-        const sDate = wd.serviceDate || new Date().toISOString().split('T')[0];
-        const start = wd.startTime || '22:00';
-        const stop = wd.stopTime || '23:00';
-        const workizJob = await createWorkizJob({
-          jobType: 'Power Washing',
-          clientFirstName: 'Starbucks',
-          jobAddress: wd.address || '',
-          jobCity: wd.city || '',
-          jobState: wd.state || '',
-          jobDateTime: `${sDate} ${start}:00`,
-          jobDescription: `Starbucks #${body.storeNumber}`,
-          jobNotes: `WO# ${body.woNumber} | Invoice# ${body.invoiceData.invoiceNumber || ''} | Tech: ${wd.technician || ''} | ${start}-${stop}`,
-        });
-        const workizUUID = workizJob?.data?.UUID || workizJob?.UUID;
-        if (workizUUID) {
-          await updateWorkizJob(workizUUID, { Status: 'completed' });
-          if (body.jobId) await updateJob(body.jobId, { workizJobId: workizUUID });
-        }
-      } catch (workizErr) {
-        console.error('Workiz sync failed (non-blocking):', workizErr);
-      }
-    }
-    return NextResponse.json({ success: true, message: 'Documents email sent' });
+      return NextResponse.json({ success: true, message: 'Documents email sent' });
 
     } else if (body.type === 'photos') {
       if (!body.photoUrls || body.photoUrls.length === 0) {
