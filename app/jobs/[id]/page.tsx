@@ -111,7 +111,7 @@ export default function JobDetailPage() {
     setSaving(false);
   }
 
-  // ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ CompanyCam ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ
+  // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ CompanyCam ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
 
   const [ccMatchedProject, setCcMatchedProject] = useState<string>('');
 
@@ -140,7 +140,7 @@ export default function JobDetailPage() {
       }
 
       if (data.matched && data.project) {
-        // Exact match found ÃÂ¢ÃÂÃÂ photos already loaded
+        // Exact match found ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ photos already loaded
         setCcMatchedProject(data.project.name);
         const photos = data.photos || [];
         setCcPhotos(photos);
@@ -150,7 +150,7 @@ export default function JobDetailPage() {
         // Auto-fill start/stop times from photo timestamps
         autoFillTimesFromPhotos(photos);
       } else {
-        // No exact match ÃÂ¢ÃÂÃÂ show search results for manual selection
+        // No exact match ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ show search results for manual selection
         setCcProjects(data.searchResults || []);
         if ((data.searchResults || []).length === 0) {
           setCcError(`No CompanyCam projects found for Starbucks #${job.storeNumber}.`);
@@ -213,7 +213,7 @@ export default function JobDetailPage() {
     const earliest = Math.min(...timestamps);
     const latest = Math.max(...timestamps);
 
-    // CompanyCam may return seconds or milliseconds ÃÂ¢ÃÂÃÂ normalize
+    // CompanyCam may return seconds or milliseconds ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ normalize
     const toTimeStr = (ts: number) => {
       const ms = ts < 10000000000 ? ts * 1000 : ts;
       const d = new Date(ms);
@@ -248,7 +248,7 @@ export default function JobDetailPage() {
     });
   }
 
-  // ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ Email sending ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ
+  // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Email sending ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
 
   function handleManualUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -507,10 +507,10 @@ export default function JobDetailPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.dataUrl} alt={photo.name} className="w-full h-full object-cover" />
                     <button onClick={() => togglePhoto(photo.dataUrl)} className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${selected ? 'bg-[#00A4C7]' : 'bg-gray-600'}`}>
-                      {selected ? 'Ã¢ÂÂ' : 'Ã¢ÂÂ'}
+                      {selected ? 'ÃÂ¢ÃÂÃÂ' : 'ÃÂ¢ÃÂÃÂ'}
                     </button>
                     <button onClick={() => removeManualPhoto(photo.id, photo.dataUrl)} className="absolute top-1 left-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      ÃÂ
+                      ÃÂÃÂ
                     </button>
                   </div>
                 );
@@ -526,7 +526,7 @@ export default function JobDetailPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-gray-400 text-sm">
-                {ccPhotos.length} photo(s) ÃÂ¢ÃÂÃÂ {selectedPhotos.size} selected
+                {ccPhotos.length} photo(s) ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ {selectedPhotos.size} selected
                 {selectedPhotos.size === ccPhotos.length && ccPhotos.length > 0 && (
                   <span className="text-green-400 ml-1">(all selected)</span>
                 )}
@@ -698,6 +698,92 @@ export default function JobDetailPage() {
           Workiz Job ID: <span className="text-white font-mono">{job.workizJobId}</span>
         </div>
       )}
+
+      {/* Workiz */}
+      <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Workiz</h2>
+        {job.workizJobId && (
+          <p className="text-gray-400 text-sm mb-3">
+            Job ID: <span className="text-white font-mono">{job.workizJobId}</span>
+          </p>
+        )}
+        <div className="flex flex-wrap gap-3">
+          {!job.workizJobId && (
+            <button
+              onClick={async () => {
+                setEmailStatus('');
+                try {
+                  const res = await fetch('/api/workiz/jobs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      FirstName: `Starbucks #${job.storeNumber}`,
+                      Address: job.address,
+                      City: job.city,
+                      State: job.state,
+                      Country: 'US',
+                      PostalCode: job.zip || '',
+                      Phone: job.storePhone || '',
+                      JobDescription: `Pressure Wash Patio/Sidewalk/Drive Thru - Starbucks #${job.storeNumber}`,
+                      JobDateTime: (job.serviceDate || new Date().toISOString().split('T')[0]) + ' 22:00',
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data.error || !data.success) {
+                    setEmailStatus(`Workiz push failed: ${data.error || 'Unknown error'}`);
+                  } else {
+                    const workizUuid = data?.data?.UUID || data?.data?.uuid;
+                    if (workizUuid) {
+                      await updateField('workizJobId', workizUuid);
+                    }
+                    setEmailStatus(data.mode === 'mock' ? 'Workiz (mock): job push simulated' : 'Job pushed to Workiz!');
+                  }
+                } catch {
+                  setEmailStatus('Failed to push to Workiz.');
+                }
+              }}
+              className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors"
+            >
+              Push Job to Workiz
+            </button>
+          )}
+          <button
+            onClick={async () => {
+              if (!job.workizJobId) { setEmailStatus('Push job to Workiz first.'); return; }
+              setEmailStatus('');
+              try {
+                const res = await fetch('/api/workiz/invoice', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    JobUUID: job.workizJobId,
+                    Items: [{
+                      description: `Pressure Wash Patio/Sidewalk/Drive Thru - Starbucks #${job.storeNumber}`,
+                      quantity: 1,
+                      price: job.price || 350,
+                    }],
+                  }),
+                });
+                const data = await res.json();
+                if (data.error || !data.success) {
+                  setEmailStatus(`Workiz invoice failed: ${data.error || 'Unknown error'}`);
+                } else {
+                  setEmailStatus(data.mode === 'mock' ? 'Workiz (mock): invoice creation simulated' : 'Invoice created in Workiz!');
+                }
+              } catch {
+                setEmailStatus('Failed to create Workiz invoice.');
+              }
+            }}
+            disabled={!job.workizJobId}
+            className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors disabled:opacity-50"
+          >
+            Create Invoice in Workiz
+          </button>
+        </div>
+        {!job.workizJobId && (
+          <p className="text-gray-500 text-xs mt-2">Push this job to Workiz first to enable invoice creation</p>
+        )}
+      </div>
     </div>
   );
 }
