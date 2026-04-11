@@ -33,6 +33,7 @@ export default function JobDetailPage() {
   const [ccProjects, setCcProjects] = useState<CCProject[]>([]);
   const [ccPhotos, setCcPhotos] = useState<CCPhoto[]>([]);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const [manualPhotos, setManualPhotos] = useState<Array<{id: string; dataUrl: string; name: string}>>([]);
   const [ccSearching, setCcSearching] = useState(false);
   const [ccLoadingPhotos, setCcLoadingPhotos] = useState(false);
   const [ccError, setCcError] = useState('');
@@ -110,7 +111,7 @@ export default function JobDetailPage() {
     setSaving(false);
   }
 
-  // ── CompanyCam ──
+  // ââ CompanyCam ââ
 
   const [ccMatchedProject, setCcMatchedProject] = useState<string>('');
 
@@ -139,7 +140,7 @@ export default function JobDetailPage() {
       }
 
       if (data.matched && data.project) {
-        // Exact match found — photos already loaded
+        // Exact match found â photos already loaded
         setCcMatchedProject(data.project.name);
         const photos = data.photos || [];
         setCcPhotos(photos);
@@ -149,7 +150,7 @@ export default function JobDetailPage() {
         // Auto-fill start/stop times from photo timestamps
         autoFillTimesFromPhotos(photos);
       } else {
-        // No exact match — show search results for manual selection
+        // No exact match â show search results for manual selection
         setCcProjects(data.searchResults || []);
         if ((data.searchResults || []).length === 0) {
           setCcError(`No CompanyCam projects found for Starbucks #${job.storeNumber}.`);
@@ -212,7 +213,7 @@ export default function JobDetailPage() {
     const earliest = Math.min(...timestamps);
     const latest = Math.max(...timestamps);
 
-    // CompanyCam may return seconds or milliseconds — normalize
+    // CompanyCam may return seconds or milliseconds â normalize
     const toTimeStr = (ts: number) => {
       const ms = ts < 10000000000 ? ts * 1000 : ts;
       const d = new Date(ms);
@@ -247,7 +248,7 @@ export default function JobDetailPage() {
     });
   }
 
-  // ── Email sending ──
+  // ââ Email sending ââ
 
   async function sendDocumentsEmail(test = false) {
     if (!job) return;
@@ -468,12 +469,44 @@ export default function JobDetailPage() {
 
         {ccLoadingPhotos && <p className="text-gray-500 text-sm">Loading photos...</p>}
 
+        {/* Manual photo upload */}
+        <div className="mt-4 pt-4 border-t border-[#1f2937]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-gray-400 text-sm font-medium">Upload Photos Manually</p>
+            <label className="px-3 py-1.5 bg-[#374151] text-gray-300 rounded text-xs font-medium hover:bg-[#4b5563] transition-colors cursor-pointer">
+              + Add Photos
+              <input type="file" accept="image/*" multiple onChange={handleManualUpload} className="hidden" />
+            </label>
+          </div>
+          {manualPhotos.length > 0 ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {manualPhotos.map((photo) => {
+                const selected = selectedPhotos.has(photo.dataUrl);
+                return (
+                  <div key={photo.id} className="relative aspect-square rounded overflow-hidden border-2 border-[#00A4C7]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photo.dataUrl} alt={photo.name} className="w-full h-full object-cover" />
+                    <button onClick={() => togglePhoto(photo.dataUrl)} className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${selected ? 'bg-[#00A4C7]' : 'bg-gray-600'}`}>
+                      {selected ? '✓' : '○'}
+                    </button>
+                    <button onClick={() => removeManualPhoto(photo.id, photo.dataUrl)} className="absolute top-1 left-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-600 text-xs">No manually uploaded photos yet.</p>
+          )}
+        </div>
+
         {/* Photo grid */}
         {ccPhotos.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-gray-400 text-sm">
-                {ccPhotos.length} photo(s) — {selectedPhotos.size} selected
+                {ccPhotos.length} photo(s) â {selectedPhotos.size} selected
                 {selectedPhotos.size === ccPhotos.length && ccPhotos.length > 0 && (
                   <span className="text-green-400 ml-1">(all selected)</span>
                 )}
