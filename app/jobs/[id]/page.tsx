@@ -111,7 +111,7 @@ export default function JobDetailPage() {
     setSaving(false);
   }
 
-  // ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ CompanyCam ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ
+  // ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ CompanyCam ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ
 
   const [ccMatchedProject, setCcMatchedProject] = useState<string>('');
 
@@ -140,7 +140,7 @@ export default function JobDetailPage() {
       }
 
       if (data.matched && data.project) {
-        // Exact match found ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ photos already loaded
+        // Exact match found ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ photos already loaded
         setCcMatchedProject(data.project.name);
         const photos = data.photos || [];
         setCcPhotos(photos);
@@ -150,7 +150,7 @@ export default function JobDetailPage() {
         // Auto-fill start/stop times from photo timestamps
         autoFillTimesFromPhotos(photos);
       } else {
-        // No exact match ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ show search results for manual selection
+        // No exact match ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ show search results for manual selection
         setCcProjects(data.searchResults || []);
         if ((data.searchResults || []).length === 0) {
           setCcError(`No CompanyCam projects found for Starbucks #${job.storeNumber}.`);
@@ -213,7 +213,7 @@ export default function JobDetailPage() {
     const earliest = Math.min(...timestamps);
     const latest = Math.max(...timestamps);
 
-    // CompanyCam may return seconds or milliseconds ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ normalize
+    // CompanyCam may return seconds or milliseconds ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ normalize
     const toTimeStr = (ts: number) => {
       const ms = ts < 10000000000 ? ts * 1000 : ts;
       const d = new Date(ms);
@@ -248,7 +248,7 @@ export default function JobDetailPage() {
     });
   }
 
-  // ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Email sending ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ
+  // ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Email sending ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ
 
   function handleManualUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -507,10 +507,10 @@ export default function JobDetailPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.dataUrl} alt={photo.name} className="w-full h-full object-cover" />
                     <button onClick={() => togglePhoto(photo.dataUrl)} className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${selected ? 'bg-[#00A4C7]' : 'bg-gray-600'}`}>
-                      {selected ? 'ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ' : 'ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ'}
+                      {selected ? 'ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ' : 'ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ'}
                     </button>
                     <button onClick={() => removeManualPhoto(photo.id, photo.dataUrl)} className="absolute top-1 left-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      ÃÂÃÂÃÂÃÂ
+                      ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ
                     </button>
                   </div>
                 );
@@ -526,7 +526,7 @@ export default function JobDetailPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-gray-400 text-sm">
-                {ccPhotos.length} photo(s) ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ {selectedPhotos.size} selected
+                {ccPhotos.length} photo(s) ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ {selectedPhotos.size} selected
                 {selectedPhotos.size === ccPhotos.length && ccPhotos.length > 0 && (
                   <span className="text-green-400 ml-1">(all selected)</span>
                 )}
@@ -724,7 +724,7 @@ export default function JobDetailPage() {
                       State: job.state,
                       Country: 'US',
                       PostalCode: job.zip || '',
-                      Phone: job.storePhone || '',
+                      ...(job.storePhone ? { Phone: job.storePhone.replace(/\D/g, '') } : {}),
                       Email: 'documents@gosuperclean.com',
                       JobType: 'SOFT WASHING',
                       JobSource: 'National Accounts',
