@@ -98,7 +98,7 @@ export async function findStarbucksProject(
     if (addrResults.length > 0) {
       // Prefer results that mention the store number or "Starbucks"
       const starbucksMatch = addrResults.find((p) =>
-        p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber)
+        p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
       );
       if (starbucksMatch) return starbucksMatch;
       // Otherwise return the first result (likely matched by address)
