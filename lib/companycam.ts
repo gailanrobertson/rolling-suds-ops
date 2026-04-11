@@ -50,14 +50,16 @@ export async function searchProjects(query: string): Promise<CCProject[]> {
 
 /**
  * Find the exact CompanyCam project for a Starbucks store.
- * Filters out "Workiz NNN - Name" placeholder projects which have 0 photos.
+ * Filters out "Workiz NNN - Name" placeholder projects (0 photos).
+ * Falls back to street number search to handle state roads like "1718 IL-171"
+ * that won't match a street-name based address.
  */
 export async function findStarbucksProject(
   storeNumber: string,
   woNumber?: string,
   address?: string
 ): Promise<CCProject | null> {
-  // Workiz placeholder projects start with "Workiz" — skip them always
+  // Skip Workiz placeholder projects — they are pre-assigned and have 0 photos
   const isReal = (p: CCProject) =>
     !p.name || !p.name.toLowerCase().startsWith('workiz');
 
@@ -70,7 +72,7 @@ export async function findStarbucksProject(
     if (match) return match;
   }
 
-  // 2. Store number search: "Starbucks #00806" — skip Workiz results
+  // 2. Store number only: "Starbucks #00806"
   const storeResults = await searchProjects(`Starbucks #${storeNumber}`);
   const storeMatches = storeResults.filter(
     (p) => p.name && p.name.includes(`#${storeNumber}`) && isReal(p)
@@ -84,15 +86,28 @@ export async function findStarbucksProject(
     return storeMatches[0];
   }
 
-  // 3. Address fallback — skip Workiz results
+  // 3. Full address search — filters Workiz placeholders
   if (address) {
     const addrResults = await searchProjects(address);
-    const validResults = addrResults.filter(isReal);
-    if (validResults.length > 0) {
-      const preferred = validResults.find(
+    const validAddr = addrResults.filter(isReal);
+    if (validAddr.length > 0) {
+      const preferred = validAddr.find(
         (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
       );
-      return preferred || validResults[0];
+      return preferred || validAddr[0];
+    }
+
+    // 4. Street number only — handles state roads like "1718 IL-171"
+    //    Extract just the leading street number (e.g. "1718" from "1718 S 1st Ave")
+    const streetNumber = address.match(/^(\d+)/)?.[1];
+    if (streetNumber && streetNumber.length >= 3) {
+      const numResults = await searchProjects(streetNumber);
+      const validNum = numResults.filter(isReal);
+      if (validNum.length > 0) {
+        // Prefer the most recently updated one (most likely the active job)
+        validNum.sort((a, b) => b.updated_at - a.updated_at);
+        return validNum[0];
+      }
     }
   }
 
