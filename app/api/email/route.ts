@@ -9,7 +9,7 @@ import { EmailLog } from '@/lib/types';
 interface SendRequest {
   type: 'documents' | 'photos';
   test?: boolean;
-  jobId?: string; // if provided, logs the send to the job
+  jobId?: string;
   storeNumber: string;
   woNumber: string;
   invoiceData?: {
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body: SendRequest = await req.json();
-    const testRecipient = process.env.EMAIL_REPLY_TO || 'max.gelfman@rollingsuds.com';
+    const testRecipient = process.env.EMAIL_REPLY_TO || 'gailan.robertson@rollingsuds.com';
 
     if (body.type === 'documents') {
       if (!body.invoiceData || !body.workOrderData) {
@@ -149,6 +149,7 @@ export async function POST(req: NextRequest) {
     } else {
       return NextResponse.json({ error: 'type must be "documents" or "photos"' }, { status: 400 });
     }
+
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 500 });
