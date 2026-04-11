@@ -111,7 +111,7 @@ export default function JobDetailPage() {
     setSaving(false);
   }
 
-  // ââ CompanyCam ââ
+  // Ã¢ÂÂÃ¢ÂÂ CompanyCam Ã¢ÂÂÃ¢ÂÂ
 
   const [ccMatchedProject, setCcMatchedProject] = useState<string>('');
 
@@ -140,7 +140,7 @@ export default function JobDetailPage() {
       }
 
       if (data.matched && data.project) {
-        // Exact match found â photos already loaded
+        // Exact match found Ã¢ÂÂ photos already loaded
         setCcMatchedProject(data.project.name);
         const photos = data.photos || [];
         setCcPhotos(photos);
@@ -150,7 +150,7 @@ export default function JobDetailPage() {
         // Auto-fill start/stop times from photo timestamps
         autoFillTimesFromPhotos(photos);
       } else {
-        // No exact match â show search results for manual selection
+        // No exact match Ã¢ÂÂ show search results for manual selection
         setCcProjects(data.searchResults || []);
         if ((data.searchResults || []).length === 0) {
           setCcError(`No CompanyCam projects found for Starbucks #${job.storeNumber}.`);
@@ -213,7 +213,7 @@ export default function JobDetailPage() {
     const earliest = Math.min(...timestamps);
     const latest = Math.max(...timestamps);
 
-    // CompanyCam may return seconds or milliseconds â normalize
+    // CompanyCam may return seconds or milliseconds Ã¢ÂÂ normalize
     const toTimeStr = (ts: number) => {
       const ms = ts < 10000000000 ? ts * 1000 : ts;
       const d = new Date(ms);
@@ -248,7 +248,27 @@ export default function JobDetailPage() {
     });
   }
 
-  // ââ Email sending ââ
+  // Ã¢ÂÂÃ¢ÂÂ Email sending Ã¢ÂÂÃ¢ÂÂ
+
+  function handleManualUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const id = `manual-${Date.now()}-${Math.random()}`;
+        setManualPhotos((prev) => [...prev, { id, dataUrl, name: file.name }]);
+        setSelectedPhotos((prev) => new Set([...prev, dataUrl]));
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  }
+
+  function removeManualPhoto(id: string, dataUrl: string) {
+    setManualPhotos((prev) => prev.filter((p) => p.id !== id));
+    setSelectedPhotos((prev) => { const next = new Set(prev); next.delete(dataUrl); return next; });
+  }
 
   async function sendDocumentsEmail(test = false) {
     if (!job) return;
@@ -487,10 +507,10 @@ export default function JobDetailPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.dataUrl} alt={photo.name} className="w-full h-full object-cover" />
                     <button onClick={() => togglePhoto(photo.dataUrl)} className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${selected ? 'bg-[#00A4C7]' : 'bg-gray-600'}`}>
-                      {selected ? '✓' : '○'}
+                      {selected ? 'â' : 'â'}
                     </button>
                     <button onClick={() => removeManualPhoto(photo.id, photo.dataUrl)} className="absolute top-1 left-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      ×
+                      Ã
                     </button>
                   </div>
                 );
@@ -506,7 +526,7 @@ export default function JobDetailPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-gray-400 text-sm">
-                {ccPhotos.length} photo(s) â {selectedPhotos.size} selected
+                {ccPhotos.length} photo(s) Ã¢ÂÂ {selectedPhotos.size} selected
                 {selectedPhotos.size === ccPhotos.length && ccPhotos.length > 0 && (
                   <span className="text-green-400 ml-1">(all selected)</span>
                 )}
