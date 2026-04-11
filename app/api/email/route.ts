@@ -117,23 +117,19 @@ export async function POST(req: NextRequest) {
         const start = wd.startTime || '22:00';
         const stop = wd.stopTime || '23:00';
         const workizJob = await createWorkizJob({
-          JobDateTime: `${sDate} ${start}:00`,
-          JobEndDateTime: `${sDate} ${stop}:00`,
-          JobTotalPrice: body.invoiceData.price || 0,
-          JobType: 'Power Washing',
-          JobSource: 'Starbucks',
-          FirstName: 'Starbucks',
-          LastName: `#${body.storeNumber}`,
-          Phone: wd.storePhone || '',
-          Address: wd.address || '',
-          City: wd.city || '',
-          State: wd.state || '',
-          PostalCode: body.invoiceData.zip || '',
-          JobNotes: `WO# ${body.woNumber} | Invoice# ${body.invoiceData.invoiceNumber || ''} | Tech: ${wd.technician || ''} | ${start}-${stop}`,
+          jobType: 'Power Washing',
+          clientFirstName: 'Starbucks',
+          jobAddress: wd.address || '',
+          jobCity: wd.city || '',
+          jobState: wd.state || '',
+          jobDateTime: `${sDate} ${start}:00`,
+          jobDescription: `Starbucks #${body.storeNumber}`,
+          jobNotes: `WO# ${body.woNumber} | Invoice# ${body.invoiceData.invoiceNumber || ''} | Tech: ${wd.technician || ''} | ${start}-${stop}`,
         });
-        if (workizJob?.UUID) {
-          await updateWorkizJob(workizJob.UUID, { Status: 'completed' });
-          if (body.jobId) await updateJob(body.jobId, { workizJobId: workizJob.UUID });
+        const workizUUID = workizJob?.data?.UUID || workizJob?.UUID;
+        if (workizUUID) {
+          await updateWorkizJob(workizUUID, { Status: 'completed' });
+          if (body.jobId) await updateJob(body.jobId, { workizJobId: workizUUID });
         }
       } catch (workizErr) {
         console.error('Workiz sync failed (non-blocking):', workizErr);
