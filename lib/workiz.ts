@@ -51,7 +51,6 @@ export async function createJob(data: {
   PostalCode?: string;
   JobType?: string;
   JobSource?: string;
-  JobDescription?: string;
   JobNotes?: string;
 }) {
   return workizPost('job/create/', data);
