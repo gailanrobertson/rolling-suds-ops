@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchProjects, findStarbucksProject, getProjectPhotos } from '@/lib/companycam';
 
+const isNotWorkiz = (p: { name: string }) =>
+  !p.name || !p.name.toLowerCase().startsWith('workiz');
+
 /**
  * GET /api/companycam?storeNumber=00806&woNumber=1963606 — find exact project + photos
  * GET /api/companycam?query=00806 — generic search
@@ -19,23 +22,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, photos });
     }
 
-    // Smart Starbucks project finder — uses exact naming convention
-    // "Starbucks #00806 WO# 1963606"
+    // Smart Starbucks project finder
     if (storeNumber) {
       const address = req.nextUrl.searchParams.get('address');
       const project = await findStarbucksProject(storeNumber, woNumber || undefined, address || undefined);
 
       if (!project) {
-        // Return all search results so user can pick manually
+        // Fallback search — filter out Workiz placeholders before returning to UI
         const fallbackQuery = address || `Starbucks #${storeNumber}`;
         const fallbackResults = await searchProjects(fallbackQuery);
+        const filteredResults = fallbackResults.filter(isNotWorkiz);
+
         return NextResponse.json({
           success: true,
           matched: false,
           project: null,
           photos: [],
-          searchResults: fallbackResults,
-          message: `No exact match for Starbucks #${storeNumber}${woNumber ? ` WO# ${woNumber}` : ''}. ${fallbackResults.length} similar project(s) found.`,
+          searchResults: filteredResults,
+          message: `No exact match for Starbucks #${storeNumber}${woNumber ? ` WO# ${woNumber}` : ''}. ${filteredResults.length} similar project(s) found.`,
         });
       }
 
