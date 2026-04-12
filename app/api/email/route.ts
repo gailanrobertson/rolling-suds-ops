@@ -33,6 +33,7 @@ interface SendRequest {
     stopTime: string;
   };
   photoUrls?: string[];
+  serviceCompletedDate?: string;
 }
 
 async function logEmailToJob(jobId: string | undefined, log: EmailLog) {
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
         storeNumber: body.storeNumber,
         woNumber: body.woNumber,
         ...body.invoiceData,
+        ...(body.serviceCompletedDate ? { serviceCompletedDate: body.serviceCompletedDate } : {}),
       });
       const invBase64 = Buffer.from(invPdf.output('arraybuffer')).toString('base64');
 
@@ -79,13 +81,14 @@ export async function POST(req: NextRequest) {
         storeNumber: body.storeNumber,
         woNumber: body.woNumber,
         ...body.workOrderData,
+        ...(body.serviceCompletedDate ? { serviceCompletedDate: body.serviceCompletedDate } : {}),
       });
       const woBase64 = Buffer.from(woPdf.output('arraybuffer')).toString('base64');
 
       await sendEmail({
         to,
         subject,
-        body: `<p>Attached is the invoice and signed WO for Starbucks #${body.storeNumber} WO# ${body.woNumber}. Let me know if you have any questions. Thanks.</p>`,
+        body: `<p>Attached is the invoice and signed WO for Starbucks #${body.storeNumber} WO# ${body.woNumber}${body.serviceCompletedDate ? ` completed on ${formatDateForEmail(body.serviceCompletedDate)}` : ''}. Let me know if you have any questions. Thanks.</p>`,
         attachments: [
           {
             name: `Invoice_SB${body.storeNumber}_WO${body.woNumber}.pdf`,
@@ -154,6 +157,13 @@ export async function POST(req: NextRequest) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
+}
+
+function formatDateForEmail(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  } catch { return dateStr; }
 }
 
 export async function GET() {
