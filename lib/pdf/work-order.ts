@@ -246,10 +246,11 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   doc.text('Tech Signature:', fieldLabelX, y);
   doc.line(fieldLineX, y + 1, fieldLineX + fieldLineWidth, y + 1);
 
-  // Render Gailan Robertson's signature image on the line
-  const sigW = 130;
-  const sigH = 38;
-  doc.addImage(GAILAN_SIG_BASE64, 'JPEG', fieldLineX + 4, y - sigH + 4, sigW, sigH);
+  // Render Gailan Robertson's signature — sized to fit on the line
+  const sigW = 110;
+  const sigH = 24;
+  // Position so baseline of sig sits on the signature line
+  doc.addImage(GAILAN_SIG_BASE64, 'JPEG', fieldLineX + 2, y - sigH + 2, sigW, sigH);
 
   y += 30;
 
