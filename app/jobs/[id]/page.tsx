@@ -345,6 +345,7 @@ export default function JobDetailPage() {
           storeNumber: job.storeNumber,
           woNumber: job.woNumber || '',
           photoUrls: Array.from(selectedPhotos),
+          ...(serviceCompletedDate ? { serviceCompletedDate } : {}),
         }),
       });
       const data = await res.json();
