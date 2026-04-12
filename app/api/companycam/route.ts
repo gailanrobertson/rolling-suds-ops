@@ -51,7 +51,17 @@ export async function GET(req: NextRequest) {
         project: { id: project.id, name: project.name },
         photos,
         earliestDate: photos.length > 0
-          ? new Date(Math.min(...photos.map((p: {captured_at?: number}) => p.captured_at || 0).filter(Boolean)) * 1000).toISOString().split('T')[0]
+          ? (() => {
+              const minTs = Math.min(...photos.map((p: {captured_at?: number}) => p.captured_at || 0).filter(Boolean));
+              const d = new Date(minTs * 1000);
+              // Use local date in US Central time (UTC-5/UTC-6)
+              // If hour < 12 local, assume overnight job — subtract one day
+              const localHour = d.getUTCHours() - 5; // CDT offset
+              if (localHour < 0 || localHour < 12) {
+                d.setUTCDate(d.getUTCDate() - 1);
+              }
+              return d.toISOString().split('T')[0];
+            })()
           : '',
         message: `Found "${project.name}" with ${photos.length} photo(s).`,
       });
