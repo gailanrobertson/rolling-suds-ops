@@ -250,7 +250,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   const sigW = 110;
   const sigH = 24;
   // Position so baseline of sig sits on the signature line
-  doc.addImage(GAILAN_SIG_BASE64, 'JPEG', fieldLineX + 2, y - sigH + 2, sigW, sigH);
+  doc.addImage(GAILAN_SIG_BASE64, 'PNG', fieldLineX + 2, y - sigH + 2, sigW, sigH);
 
   y += 30;
 
