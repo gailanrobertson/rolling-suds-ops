@@ -11,6 +11,7 @@ interface InvoiceData {
   city: string;
   state: string;
   zip: string;
+  serviceCompletedDate?: string;
 }
 
 const SHORT_DESCRIPTION =
@@ -59,7 +60,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   let metaY = 78;
   doc.setFontSize(9);
 
-  const formattedDate = formatDateLong(data.serviceDate);
+  const formattedDate = formatDateLong(data.serviceCompletedDate || data.serviceDate);
 
   const metaFields = [
     ['Invoice #', data.invoiceNumber || ''],
