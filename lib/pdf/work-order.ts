@@ -249,7 +249,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   // Render Gailan Robertson's signature image on the line
   const sigW = 130;
   const sigH = 38;
-  doc.addImage('data:image/jpeg;base64,' + GAILAN_SIG_BASE64, 'JPEG', fieldLineX + 4, y - sigH + 4, sigW, sigH);
+  doc.addImage(GAILAN_SIG_BASE64, 'JPEG', fieldLineX + 4, y - sigH + 4, sigW, sigH);
 
   y += 30;
 
