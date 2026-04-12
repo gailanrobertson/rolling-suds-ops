@@ -50,6 +50,9 @@ export async function GET(req: NextRequest) {
         matched: true,
         project: { id: project.id, name: project.name },
         photos,
+        earliestDate: photos.length > 0
+          ? new Date(Math.min(...photos.map((p: {captured_at?: number}) => p.captured_at || 0).filter(Boolean)) * 1000).toISOString().split('T')[0]
+          : '',
         message: `Found "${project.name}" with ${photos.length} photo(s).`,
       });
     }
