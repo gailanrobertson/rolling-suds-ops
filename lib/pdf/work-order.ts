@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { SIG_SEGS, SIG_NW, SIG_NH } from '../signature';
+import { GAILAN_SIG_BASE64 } from '../signature';
 
 interface WorkOrderData {
   storeNumber: string;
@@ -13,6 +13,7 @@ interface WorkOrderData {
   technician: string;
   startTime: string;
   stopTime: string;
+  serviceCompletedDate?: string;
 }
 
 export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
@@ -24,7 +25,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   const lineColor = '#000000';
   let y = 36;
 
-  // ─── HEADER LEFT: Company info ───
+  // âââ HEADER LEFT: Company info âââ
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(black);
@@ -46,7 +47,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   y += 10;
   doc.text('Fax: 972-926-9733', margin, y);
 
-  // ─── HEADER RIGHT: WO # and store info ───
+  // âââ HEADER RIGHT: WO # and store info âââ
   const rightCol = pageWidth * 0.48;
 
   doc.setFont('helvetica', 'bold');
@@ -71,7 +72,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y += 20;
 
-  // ─── SERVICE DATE / WORKTASK / IVR TABLE ───
+  // âââ SERVICE DATE / WORKTASK / IVR TABLE âââ
   const tableTop = y;
   const tableHeight = 32;
   const col1W = (pageWidth - margin * 2) * 0.35;
@@ -113,14 +114,14 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y = tableTop + tableHeight + 12;
 
-  // ─── SERVICE LINE ───
+  // âââ SERVICE LINE âââ
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text('Pressure Wash Patio/Sidewalk/Drive Thru', margin, y);
   doc.text('COMPLETE_____X_____', rightEdge - 140, y);
   y += 16;
 
-  // ─── INSTRUCTIONS PARAGRAPH ───
+  // âââ INSTRUCTIONS PARAGRAPH âââ
   doc.setDrawColor(lineColor);
   doc.setLineWidth(0.5);
   const instrBoxTop = y;
@@ -145,7 +146,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y = instrBoxTop + instrBoxHeight + 16;
 
-  // ─── PHOTO WARNING ───
+  // âââ PHOTO WARNING âââ
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(black);
@@ -161,12 +162,12 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   doc.text('TAKEN OF FRONT DOOR WITH ADDRESS', photoCol2, y);
   y += 18;
 
-  // ─── DIVIDER ───
+  // âââ DIVIDER âââ
   doc.setLineWidth(0.5);
   doc.line(margin, y, rightEdge, y);
   y += 14;
 
-  // ─── TECHNICIAN COMPLETION CHECKLIST ───
+  // âââ TECHNICIAN COMPLETION CHECKLIST âââ
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text('Technician Completion Checklist', margin, y);
@@ -197,12 +198,12 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y += 12;
 
-  // ─── COMPLETION FIELDS ───
+  // âââ COMPLETION FIELDS âââ
   const fieldLineWidth = 200;
   const fieldLabelX = margin;
   const fieldLineX = margin + 95;
 
-  const completedDate = formatDateShort(data.serviceDate);
+  const completedDate = data.serviceCompletedDate ? formatDateShort(data.serviceCompletedDate) : formatDateShort(data.serviceDate);
   const techName = data.technician || 'Rolling Suds of Westchester-Stamford';
   const startFormatted = formatTime(data.startTime);
   const stopFormatted = formatTime(data.stopTime);
@@ -241,7 +242,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   if (totalHrs) doc.text(totalHrs, fieldLineX + 4, y);
   y += 22;
 
-  // ─── TECH SIGNATURE ───
+  // âââ TECH SIGNATURE âââ
   doc.text('Tech Signature:', fieldLabelX, y);
   doc.line(fieldLineX, y + 1, fieldLineX + fieldLineWidth, y + 1);
 
@@ -266,7 +267,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y += 30;
 
-  // ─── FOOTER ───
+  // âââ FOOTER âââ
   doc.setLineWidth(0.5);
   doc.line(margin, y, rightEdge, y);
   y += 14;
