@@ -25,7 +25,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   const lineColor = '#000000';
   let y = 36;
 
-  // âââ HEADER LEFT: Company info âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ HEADER LEFT: Company info Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(black);
@@ -47,7 +47,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   y += 10;
   doc.text('Fax: 972-926-9733', margin, y);
 
-  // âââ HEADER RIGHT: WO # and store info âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ HEADER RIGHT: WO # and store info Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   const rightCol = pageWidth * 0.48;
 
   doc.setFont('helvetica', 'bold');
@@ -72,7 +72,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y += 20;
 
-  // âââ SERVICE DATE / WORKTASK / IVR TABLE âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ SERVICE DATE / WORKTASK / IVR TABLE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   const tableTop = y;
   const tableHeight = 32;
   const col1W = (pageWidth - margin * 2) * 0.35;
@@ -114,14 +114,14 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y = tableTop + tableHeight + 12;
 
-  // âââ SERVICE LINE âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ SERVICE LINE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text('Pressure Wash Patio/Sidewalk/Drive Thru', margin, y);
   doc.text('COMPLETE_____X_____', rightEdge - 140, y);
   y += 16;
 
-  // âââ INSTRUCTIONS PARAGRAPH âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ INSTRUCTIONS PARAGRAPH Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   doc.setDrawColor(lineColor);
   doc.setLineWidth(0.5);
   const instrBoxTop = y;
@@ -146,7 +146,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y = instrBoxTop + instrBoxHeight + 16;
 
-  // âââ PHOTO WARNING âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ PHOTO WARNING Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(black);
@@ -162,12 +162,12 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   doc.text('TAKEN OF FRONT DOOR WITH ADDRESS', photoCol2, y);
   y += 18;
 
-  // âââ DIVIDER âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ DIVIDER Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   doc.setLineWidth(0.5);
   doc.line(margin, y, rightEdge, y);
   y += 14;
 
-  // âââ TECHNICIAN COMPLETION CHECKLIST âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ TECHNICIAN COMPLETION CHECKLIST Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text('Technician Completion Checklist', margin, y);
@@ -198,7 +198,7 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
 
   y += 12;
 
-  // âââ COMPLETION FIELDS âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ COMPLETION FIELDS Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   const fieldLineWidth = 200;
   const fieldLabelX = margin;
   const fieldLineX = margin + 95;
@@ -242,32 +242,18 @@ export function generateWorkOrderPDF(data: WorkOrderData): jsPDF {
   if (totalHrs) doc.text(totalHrs, fieldLineX + 4, y);
   y += 22;
 
-  // âââ TECH SIGNATURE âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ TECH SIGNATURE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   doc.text('Tech Signature:', fieldLabelX, y);
   doc.line(fieldLineX, y + 1, fieldLineX + fieldLineWidth, y + 1);
 
-  // Render vector signature on the line
-  const sigTargetWidth = 140;
-  const sigTargetHeight = (SIG_NH / SIG_NW) * sigTargetWidth;
-  const sigX = fieldLineX + 8;
-  const sigY = y - sigTargetHeight + 2; // position so signature sits ON the line
-  const scaleX = sigTargetWidth / SIG_NW;
-  const scaleY = sigTargetHeight / SIG_NH;
-
-  doc.setFillColor('#1a1a2e');
-  for (const [sx, sy, sw] of SIG_SEGS) {
-    doc.rect(
-      sigX + sx * scaleX,
-      sigY + sy * scaleY,
-      sw * scaleX,
-      scaleY,
-      'F'
-    );
-  }
+  // Render Gailan Robertson's signature image on the line
+  const sigW = 130;
+  const sigH = 38;
+  doc.addImage('data:image/jpeg;base64,' + GAILAN_SIG_BASE64, 'JPEG', fieldLineX + 4, y - sigH + 4, sigW, sigH);
 
   y += 30;
 
-  // âââ FOOTER âââ
+  // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ FOOTER Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
   doc.setLineWidth(0.5);
   doc.line(margin, y, rightEdge, y);
   y += 14;
