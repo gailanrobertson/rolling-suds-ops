@@ -771,7 +771,7 @@ export default function JobDetailPage() {
                       Country: 'US',
                       PostalCode: job.zip || '',
                       Email: 'documents@gosuperclean.com',
-                      JobType: 'National Accounts',
+                      JobType: 'SOFT WASHING',
                       JobSource: 'National Accounts',
                       ServiceArea: (() => {
                         const zip = job.zip || '';
@@ -789,7 +789,6 @@ export default function JobDetailPage() {
                         };
                         return zipMap[zip] || 'Schaumburg';
                       })(),
-                      Status: 'done',
                       JobDateTime: (job.serviceDate || new Date().toISOString().split('T')[0]) + ' 22:00',
                       JobNotes: `Starbucks #${job.storeNumber} WO# ${job.woNumber || ''}`,
                     }),
