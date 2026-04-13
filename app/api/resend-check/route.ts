@@ -4,33 +4,26 @@ export async function GET() {
   const apiToken = process.env.WORKIZ_API_TOKEN || '';
   const secret = process.env.WORKIZ_API_SECRET || '';
   const base = 'https://api.workiz.com/api/v1/' + apiToken;
-  const uuid = 'ITSANZ';
   const clientId = '1383';
   const today = new Date().toISOString().split('T')[0];
 
-  // Test invoice/create with Created field and correct item format
+  // Try 1: ClientId + Created + no items (to see what other fields are required)
   const t1 = await fetch(base + '/invoice/create/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      auth_secret: secret,
-      ClientId: clientId,
-      JobUUID: uuid,
-      Created: today,
-      items: [{ name: 'Test Item', quantity: 1, unit_price: 100 }]
-    })
+    body: JSON.stringify({ auth_secret: secret, ClientId: clientId, Created: today })
   });
   const d1 = await t1.json().catch(() => ({}));
 
-  // Test invoice/create with job_uuid snake case
+  // Try 2: ClientId + Created + Items (capital I, different format)
   const t2 = await fetch(base + '/invoice/create/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       auth_secret: secret,
-      client_id: clientId,
-      job_uuid: uuid,
-      created: today,
+      ClientId: clientId,
+      Created: today,
+      Items: [{ Name: 'Starbucks Cleaning', Quantity: 1, Price: 290, Cost: 0 }]
     })
   });
   const d2 = await t2.json().catch(() => ({}));
