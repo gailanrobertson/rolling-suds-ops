@@ -4,33 +4,33 @@ export async function GET() {
   const apiToken = process.env.WORKIZ_API_TOKEN || '';
   const secret = process.env.WORKIZ_API_SECRET || '';
   const base = 'https://api.workiz.com/api/v1/' + apiToken;
-
-  // Use ITSANZ (Bruce Rockwell job) as test - ClientId 1383
   const uuid = 'ITSANZ';
   const clientId = '1383';
+  const today = new Date().toISOString().split('T')[0];
 
-  // Test 1: invoice/create with all known required fields
+  // Test invoice/create with Created field and correct item format
   const t1 = await fetch(base + '/invoice/create/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       auth_secret: secret,
-      JobUUID: uuid,
       ClientId: clientId,
-      LineItems: [{ name: 'Test Item', quantity: 1, price: 100, cost: 0, taxable: false }]
+      JobUUID: uuid,
+      Created: today,
+      items: [{ name: 'Test Item', quantity: 1, unit_price: 100 }]
     })
   });
   const d1 = await t1.json().catch(() => ({}));
 
-  // Test 2: job/update with SubTotal to see if we can at least set total
-  const t2 = await fetch(base + '/job/update/', {
+  // Test invoice/create with job_uuid snake case
+  const t2 = await fetch(base + '/invoice/create/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       auth_secret: secret,
-      UUID: uuid,
-      JobTotalPrice: 290,
-      SubTotal: 290
+      client_id: clientId,
+      job_uuid: uuid,
+      created: today,
     })
   });
   const d2 = await t2.json().catch(() => ({}));
