@@ -9,71 +9,56 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true, mode: 'mock',
         message: 'Workiz not configured.',
-        data: { UUID: `mock-${Date.now()}` },
+        data: { UUID: 'mock-' + Date.now() },
       });
     }
 
-    // addItem
     if (body._action === 'addItem' && body.UUID) {
-      const { _action, UUID, ...itemData } = body;
-      const result = await updateJob(UUID, itemData);
+      const { UUID, ...itemData } = body;
+      delete itemData._action;
+      const result = await updateJob(UUID as string, itemData);
       return NextResponse.json({ success: true, mode: 'live', data: result });
     }
 
-    // createInvoice
     if (body._action === 'createInvoice' && body.ClientId) {
       const today = new Date().toISOString().split('T')[0];
       const result = await createInvoice({ ClientId: body.ClientId, Created: body.Created || today });
       return NextResponse.json({ success: true, mode: 'live', data: result });
     }
 
-    // updateStatus
     if (body._action === 'updateStatus' && body.UUID) {
-      const result = await updateJob(body.UUID, { Status: body.Status });
+      const result = await updateJob(body.UUID as string, { Status: body.Status });
       return NextResponse.json({ success: true, mode: 'live', data: result });
     }
 
-    // Default: create job then auto-run full flow
-    const { _action, jobPrice, ...createData } = body;
+    // Default: create job then run full post-creation flow
+    const { jobPrice, ...createData } = body;
+    delete createData._action;
     const jobResult = await createJob(createData);
 
-    // Extract UUID and ClientId from response (data is array)
-    const jobInfo = Array.isArray(jobResult?.data) ? jobResult.data[0] : jobResult?.data;
-    const uuid = jobInfo?.UUID;
-    const clientId = jobInfo?.ClientId;
-
+    const jobArr = Array.isArray(jobResult?.data) ? jobResult.data : [jobResult?.data];
+    const jobInfo = jobArr[0] || {};
+    const uuid = jobInfo.UUID as string | undefined;
+    const clientId = jobInfo.ClientId as string | undefined;
     const today = new Date().toISOString().split('T')[0];
-    const followUp: Record<string, unknown> = {};
+    const price = (jobPrice as number) || 290;
 
-    // 1. Add line item
+    // Add line item (best-effort)
     if (uuid) {
-      try {
-        const itemRes = await updateJob(uuid, {
-          ItemName: 'Starbucks Cleaning',
-          ItemQuantity: 1,
-          ItemPrice: jobPrice || 290,
-        });
-        followUp.itemResult = itemRes;
-      } catch (e) { followUp.itemError = String(e); }
+      try { await updateJob(uuid, { ItemName: 'Starbucks Cleaning', ItemQuantity: 1, ItemPrice: price }); } catch { /* ignore */ }
     }
 
-    // 2. Create invoice
+    // Create invoice (best-effort)
     if (clientId) {
-      try {
-        const invRes = await createInvoice({ ClientId: clientId, Created: today });
-        followUp.invoiceResult = invRes;
-      } catch (e) { followUp.invoiceError = String(e); }
+      try { await createInvoice({ ClientId: clientId, Created: today }); } catch { /* ignore */ }
     }
 
-    // 3. Set status to done
+    // Set status done (best-effort)
     if (uuid) {
-      try {
-        const statusRes = await updateJob(uuid, { Status: 'done' });
-        followUp.statusResult = statusRes;
-      } catch (e) { followUp.statusError = String(e); }
+      try { await updateJob(uuid, { Status: 'done' }); } catch { /* ignore */ }
     }
 
-    return NextResponse.json({ success: true, mode: 'live', data: jobInfo, followUp });
+    return NextResponse.json({ success: true, mode: 'live', data: jobInfo });
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
