@@ -148,11 +148,7 @@ export default function JobDetailPage() {
         setCcMatchedProject(data.project.name);
         const photos = data.photos || [];
         setCcPhotos(photos);
-        const photoTs = photos.map((p: CCPhoto) => p.captured_at).filter(Boolean) as number[];
-        if (photoTs.length > 0) {
-          const earliest = new Date(Math.min(...photoTs) * 1000);
-          setServiceCompletedDate(earliest.toISOString().split('T')[0]);
-        }
+        // serviceCompletedDate set from data.earliestDate (server-side, timezone-corrected)
         // Auto-select all photos (typically exactly 5)
         const allUrls = photos.map((p: CCPhoto) => getPhotoUrl(p)).filter(Boolean);
         setSelectedPhotos(new Set(allUrls));
