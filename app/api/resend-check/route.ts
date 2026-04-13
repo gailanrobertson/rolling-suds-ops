@@ -5,27 +5,24 @@ export async function GET() {
   const secret = process.env.WORKIZ_API_SECRET || '';
   const base = `https://api.workiz.com/api/v1/${apiToken}`;
   const uuid = 'LHHROT';
-  const body = { auth_secret: secret, UUID: uuid };
-  
-  const endpoints = [
-    'job/item/',
-    'items/',
-    'job/lineitem/',
-  ];
-  
-  const results: Record<string, unknown> = {};
-  for (const ep of endpoints) {
-    try {
-      const r = await fetch(`${base}/${ep}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, name: 'Starbucks Cleaning', price: 290, quantity: 1 })
-      });
-      const d = await r.json().catch(() => ({}));
-      results[ep] = { status: r.status, data: d };
-    } catch (e) {
-      results[ep] = { error: String(e) };
-    }
-  }
-  return NextResponse.json(results);
+
+  // Get job details to find ClientId
+  const jobRes = await fetch(`${base}/job/get/${uuid}/`);
+  const jobData = await jobRes.json();
+  const clientId = jobData?.data?.[0]?.ClientId || '';
+
+  // Try invoice/create with correct fields
+  const invRes = await fetch(`${base}/invoice/create/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      auth_secret: secret,
+      JobUUID: uuid,
+      ClientId: clientId,
+      LineItems: [{ name: 'Starbucks Cleaning', quantity: 1, price: 290, cost: 0 }]
+    })
+  });
+  const invData = await invRes.json();
+
+  return NextResponse.json({ clientId, invStatus: invRes.status, invData });
 }
