@@ -762,8 +762,8 @@ export default function JobDetailPage() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      FirstName: 'Corina',
-                      LastName: 'Fuentes',
+                      FirstName: `Store # ${job.storeNumber}`,
+                      LastName: `Workorder # ${job.woNumber || ''}`,
                       Company: 'Superclean',
                       Address: job.address || '',
                       City: job.city || '',
