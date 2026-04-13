@@ -21,6 +21,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, mode: 'live', data: result });
     }
 
+    // Handle status update
+    if (body._action === 'updateStatus' && body.UUID) {
+      const result = await updateJob(body.UUID, { Status: body.Status });
+      return NextResponse.json({ success: true, mode: 'live', data: result });
+    }
+
     // Default: create a new job
     const { _action, ...createData } = body;
     const result = await createJob(createData);
