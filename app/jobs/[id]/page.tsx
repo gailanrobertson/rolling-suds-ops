@@ -801,7 +801,6 @@ export default function JobDetailPage() {
                         };
                         return zipMap[zip] || 'Schaumburg';
                       })(),
-                      JobDateTime: (job.serviceDate || new Date().toISOString().split('T')[0]) + ' 22:00',
                       JobNotes: `Starbucks #${job.storeNumber} WO# ${job.woNumber || ''}`,
                     }),
                   });
