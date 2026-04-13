@@ -773,6 +773,7 @@ export default function JobDetailPage() {
                       Email: 'documents@gosuperclean.com',
                       JobType: 'Starbucks Cleaning',
                       JobSource: 'National Accounts',
+                      type_of_job: 'National Accounts',
                       ServiceArea: (() => {
                         const zip = job.zip || '';
                         const zipMap: Record<string, string> = {
