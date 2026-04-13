@@ -771,14 +771,20 @@ export default function JobDetailPage() {
                       Country: 'US',
                       PostalCode: job.zip || '',
                       Email: 'documents@gosuperclean.com',
-                      JobType: 'SOFT WASHING',
+                      JobType: 'Starbucks Cleaning',
                       JobSource: 'National Accounts',
                       ServiceArea: (() => {
                         const zip = job.zip || '';
                         const zipMap: Record<string, string> = {
                           '60005': 'ARLINGTON HEIGHTS - 60005',
+                          '60004': 'ARLINGTON HEIGHTS - 60005',
+                          '60006': 'ARLINGTON HEIGHTS - 60005',
                           '60010': 'BARRINGTON - 60010',
+                          '60011': 'BARRINGTON - 60010',
+                          '60021': 'BARRINGTON - 60010',
+                          '60047': 'BARRINGTON - 60010',
                           '60074': 'PALATINE - 60074',
+                          '60067': 'PALATINE - 60074',
                           '60103': 'ARLINGTON HEIGHTS - 60005',
                           '60120': 'SCHAUMBURG - 60194',
                           '60173': 'SCHAUMBURG - 60194',
@@ -786,6 +792,11 @@ export default function JobDetailPage() {
                           '60177': 'SCHAUMBURG - 60194',
                           '60194': 'SCHAUMBURG - 60194',
                           '60195': 'SCHAUMBURG - 60194',
+                          '60160': 'MELROSE PARK - 60160',
+                          '60161': 'MELROSE PARK - 60160',
+                          '60162': 'MELROSE PARK - 60160',
+                          '60163': 'MELROSE PARK - 60160',
+                          '60164': 'MELROSE PARK - 60160',
                         };
                         return zipMap[zip] || 'Schaumburg';
                       })(),
