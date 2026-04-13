@@ -803,7 +803,6 @@ export default function JobDetailPage() {
                       })(),
                       JobDateTime: (job.serviceDate || new Date().toISOString().split('T')[0]) + ' 22:00',
                       JobNotes: `Starbucks #${job.storeNumber} WO# ${job.woNumber || ''}`,
-                      jobPrice: job.price || 290,
                     }),
                   });
                   const data = await res.json();
