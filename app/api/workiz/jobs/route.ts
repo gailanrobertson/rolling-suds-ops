@@ -3,65 +3,37 @@ import { createJob, updateJob, createInvoice, isWorkizConfigured } from '@/lib/w
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-
-    if (!isWorkizConfigured()) {
-      return NextResponse.json({
-        success: true, mode: 'mock',
-        message: 'Workiz not configured.',
-        data: { UUID: 'mock-' + Date.now() },
-      });
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body: any = await req.json();
+    if (!isWorkizConfigured()) return NextResponse.json({ success: true, mode: 'mock', data: { UUID: 'mock-' + Date.now() } });
 
     if (body._action === 'addItem' && body.UUID) {
-      const { UUID, ...itemData } = body;
-      delete itemData._action;
-      const result = await updateJob(UUID as string, itemData);
-      return NextResponse.json({ success: true, mode: 'live', data: result });
+      const { UUID, ...rest } = body; delete rest._action;
+      return NextResponse.json({ success: true, data: await updateJob(UUID, rest) });
     }
-
     if (body._action === 'createInvoice' && body.ClientId) {
       const today = new Date().toISOString().split('T')[0];
-      const result = await createInvoice({ ClientId: body.ClientId, Created: body.Created || today });
-      return NextResponse.json({ success: true, mode: 'live', data: result });
+      return NextResponse.json({ success: true, data: await createInvoice({ ClientId: body.ClientId, Created: today }) });
     }
-
     if (body._action === 'updateStatus' && body.UUID) {
-      const result = await updateJob(body.UUID as string, { Status: body.Status });
-      return NextResponse.json({ success: true, mode: 'live', data: result });
+      return NextResponse.json({ success: true, data: await updateJob(body.UUID, { Status: body.Status }) });
     }
 
-    // Default: create job then run full post-creation flow
-    const { jobPrice, ...createData } = body;
-    delete createData._action;
+    // Create job + full post-creation flow
+    const price = Number(body.jobPrice) || 290;
+    const { jobPrice: _p, _action: _a, ...createData } = body; void _p; void _a;
     const jobResult = await createJob(createData);
-
-    const jobArr = Array.isArray(jobResult?.data) ? jobResult.data : [jobResult?.data];
-    const jobInfo = jobArr[0] || {};
-    const uuid = jobInfo.UUID as string | undefined;
-    const clientId = jobInfo.ClientId as string | undefined;
+    const info = Array.isArray(jobResult?.data) ? jobResult.data[0] : (jobResult?.data || {});
+    const uuid = info.UUID as string;
+    const clientId = info.ClientId as string;
     const today = new Date().toISOString().split('T')[0];
-    const price = (jobPrice as number) || 290;
-
-    // Add line item (best-effort)
-    if (uuid) {
-      try { await updateJob(uuid, { ItemName: 'Starbucks Cleaning', ItemQuantity: 1, ItemPrice: price }); } catch { /* ignore */ }
-    }
-
-    // Create invoice (best-effort)
-    if (clientId) {
-      try { await createInvoice({ ClientId: clientId, Created: today }); } catch { /* ignore */ }
-    }
-
-    // Set status done (best-effort)
-    if (uuid) {
-      try { await updateJob(uuid, { Status: 'done' }); } catch { /* ignore */ }
-    }
-
-    return NextResponse.json({ success: true, mode: 'live', data: jobInfo });
+    if (uuid) { try { await updateJob(uuid, { ItemName: 'Starbucks Cleaning', ItemQuantity: 1, ItemPrice: price }); } catch { /* ok */ } }
+    if (clientId) { try { await createInvoice({ ClientId: clientId, Created: today }); } catch { /* ok */ } }
+    if (uuid) { try { await updateJob(uuid, { Status: 'done' }); } catch { /* ok */ } }
+    return NextResponse.json({ success: true, mode: 'live', data: info });
 
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
