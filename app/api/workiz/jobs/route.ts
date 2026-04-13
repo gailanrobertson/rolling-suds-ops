@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createJob, updateJob, isWorkizConfigured } from '@/lib/workiz';
+import { createJob, updateJob, createInvoice, isWorkizConfigured } from '@/lib/workiz';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
     if (body._action === 'addItem' && body.UUID) {
       const { _action, UUID, ...itemData } = body;
       const result = await updateJob(UUID, itemData);
+      return NextResponse.json({ success: true, mode: 'live', data: result });
+    }
+
+    // Handle invoice creation
+    if (body._action === 'createInvoice' && body.ClientId) {
+      const today = new Date().toISOString().split('T')[0];
+      const result = await createInvoice({ ClientId: body.ClientId, Created: body.Created || today });
       return NextResponse.json({ success: true, mode: 'live', data: result });
     }
 
