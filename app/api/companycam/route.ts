@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         success: true,
         matched: true,
         project: { id: project.id, name: project.name },
-        photos,
+        photos: photos.filter((p: {captured_at?: number}) => !p.captured_at || p.captured_at >= Math.floor(Date.now()/1000) - 7776000),
         earliestDate: photos.length > 0
           ? (() => {
               const minTs = Math.min(...photos.map((p: {captured_at?: number}) => p.captured_at || 0).filter(Boolean));
