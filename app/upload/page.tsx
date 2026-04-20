@@ -78,7 +78,7 @@ export default function UploadPage() {
     }));
 
     const res = await fetch('/api/jobs', {
-      method: 'POST',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(jobs),
     });
