@@ -11,7 +11,16 @@ export default function SchedulePage() {
   const technicians = useTechnicians();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [view, setView] = useState<ViewMode>('week');
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (typeof window === 'undefined') return new Date();
+    const saved = sessionStorage.getItem('schedule-current-date');
+    if (!saved) return new Date();
+    const d = new Date(saved);
+    return isNaN(d.getTime()) ? new Date() : d;
+  });
+  useEffect(() => {
+    sessionStorage.setItem('schedule-current-date', currentDate.toISOString());
+  }, [currentDate]);
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
   const [bulkTech, setBulkTech] = useState('');
   const [loading, setLoading] = useState(true);
