@@ -30,7 +30,7 @@ export default function UploadPage() {
     const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet);
 
     const parsed: ParsedScheduleRow[] = jsonData.map((row) => {
-      const store = String(row['Store'] || row['store'] || row['Store #'] || row['store #'] || '');
+      const store = String(row['Store Number'] || row['store number'] || row['StoreNumber'] || row['Store'] || row['store'] || row['Store #'] || row['store #'] || '');
       const storeMatch = store.match(/#?\s*(\d+)/);
       const storeNumber = storeMatch ? storeMatch[1].padStart(5, '0') : store;
 
@@ -40,13 +40,13 @@ export default function UploadPage() {
       const parsedPrice = Number(rawPrice);
 
       return {
-        night: Number(row['Night'] || row['night'] || 0),
+        night: Number(row['Night #'] || row['night #'] || row['Night'] || row['night'] || 0),
         date: parseDate(row['Date'] || row['date']),
         store,
         storeNumber,
         address: String(row['Address'] || row['address'] || ''),
         city: String(row['City'] || row['city'] || ''),
-        state: String(row['State'] || row['state'] || ''),
+        state: String(row['State'] || row['state'] || 'IL'),
         price: parsedPrice > 0 ? parsedPrice : undefined,
       };
     });
