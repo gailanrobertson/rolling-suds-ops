@@ -72,7 +72,7 @@ export default function UploadPage() {
       serviceDate: row.date,
       nightNumber: row.night,
       assignedTech: techs[i] || defaultTech || undefined,
-      status: 'scheduled' as const,
+      status: (row.date && row.date < new Date().toISOString().slice(0, 10) ? 'completed' : 'scheduled') as 'scheduled' | 'completed',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }));
