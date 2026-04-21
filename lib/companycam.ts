@@ -243,3 +243,4 @@ export async function downloadPhotoAsBase64(photoUrl: string): Promise<{ base64:
   const base64 = Buffer.from(buffer).toString('base64');
   return { base64, contentType };
 }
+// trigger vercel rebuild
