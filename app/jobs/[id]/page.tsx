@@ -45,6 +45,7 @@ export default function JobDetailPage() {
   const [emailStatus, setEmailStatus] = useState('');
   const [geocoding, setGeocoding] = useState(false);
   const [serviceCompletedDate, setServiceCompletedDate] = useState('');
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
 
   function refreshJob() {
     fetch(`/api/jobs/${id}`).then((r) => r.json()).then(setJob).catch(() => {});
@@ -448,11 +449,22 @@ export default function JobDetailPage() {
             </select>
           </div>
           <EditField label="Price" value={String(job.price || DEFAULT_PRICE)} type="number" onSave={(v) => updateField('price', Number(v))} />
-          <EditField label="Service Date" value={job.serviceDate} type="date" onSave={(v) => updateField('serviceDate', v)} />
-          <EditField label="Night #" value={String(job.nightNumber || '')} type="number" onSave={(v) => updateField('nightNumber', Number(v))} />
-          <EditField label="Start Time" value={job.startTime || ''} type="time" onSave={(v) => updateField('startTime', v)} />
-          <EditField label="Stop Time" value={job.stopTime || ''} type="time" onSave={(v) => updateField('stopTime', v)} />
-          <EditField label="State" value={job.state || ''} onSave={(v) => updateField('state', v)} />
+        </div>
+
+        <button
+          onClick={() => setShowMoreDetails((v) => !v)}
+          className="mt-3 text-sm text-[#00A4C7] hover:underline"
+        >
+          {showMoreDetails ? 'Hide details ▲' : 'Show more details ▼'}
+        </button>
+
+        {showMoreDetails && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#1f2937]">
+            <EditField label="Service Date" value={job.serviceDate} type="date" onSave={(v) => updateField('serviceDate', v)} />
+            <EditField label="Night #" value={String(job.nightNumber || '')} type="number" onSave={(v) => updateField('nightNumber', Number(v))} />
+            <EditField label="Start Time" value={job.startTime || ''} type="time" onSave={(v) => updateField('startTime', v)} />
+            <EditField label="Stop Time" value={job.stopTime || ''} type="time" onSave={(v) => updateField('stopTime', v)} />
+            <EditField label="State" value={job.state || ''} onSave={(v) => updateField('state', v)} />
             <div className="flex items-end gap-3">
               <div className="flex-1">
                 <EditField label="Zip" value={job.zip || ''} onSave={(v) => updateField('zip', v)} />
@@ -465,8 +477,8 @@ export default function JobDetailPage() {
                 {geocoding ? 'Looking up...' : 'Fill'}
               </button>
             </div>
-          <EditField label="Store Phone" value={job.storePhone || ''} onSave={(v) => updateField('storePhone', v)} />
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Workiz */}
