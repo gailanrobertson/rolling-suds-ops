@@ -481,6 +481,137 @@ export default function JobDetailPage() {
         )}
       </div>
 
+      {/* CompanyCam Photos */}
+      <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">CompanyCam Photos</h2>
+            {ccMatchedProject && (
+              <p className="text-green-400 text-xs mt-1">Matched: {ccMatchedProject}</p>
+            )}
+          </div>
+          <button
+            onClick={searchCompanyCam}
+            disabled={ccSearching}
+            className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors disabled:opacity-50"
+          >
+            {ccSearching ? 'Searching...' : ccPhotos.length > 0 ? 'Refresh' : 'Find Photos'}
+          </button>
+        </div>
+
+        {!ccSearching && ccPhotos.length === 0 && ccProjects.length === 0 && !ccError && (
+          <p className="text-gray-500 text-sm mb-3">
+            Click &quot;Find Photos&quot; to search for project &quot;Starbucks #{job.storeNumber}{job.woNumber ? ` WO# ${job.woNumber}` : ''}&quot;
+          </p>
+        )}
+
+        {ccError && <p className="text-yellow-400 text-sm mb-3">{ccError}</p>}
+
+        {/* Fallback: manual project selection when no exact match */}
+        {ccProjects.length > 0 && ccPhotos.length === 0 && (
+          <div className="space-y-2 mb-4">
+            <p className="text-gray-400 text-sm">Select the correct project:</p>
+            {ccProjects.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => loadPhotos(p.id, p.name)}
+                disabled={ccLoadingPhotos}
+                className="block w-full text-left p-3 bg-[#0a0f1a] border border-[#374151] rounded hover:border-[#00A4C7] transition-colors"
+              >
+                <span className="text-white text-sm font-medium">{p.name}</span>
+                <span className="text-gray-500 text-xs ml-2">Click to load photos</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {ccLoadingPhotos && <p className="text-gray-500 text-sm">Loading photos...</p>}
+
+        {/* Manual photo upload */}
+        <div className="mt-4 pt-4 border-t border-[#1f2937]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-gray-400 text-sm font-medium">Upload Photos Manually</p>
+            <label className="px-3 py-1.5 bg-[#374151] text-gray-300 rounded text-xs font-medium hover:bg-[#4b5563] transition-colors cursor-pointer">
+              + Add Photos
+              <input type="file" accept="image/*" multiple onChange={handleManualUpload} className="hidden" />
+            </label>
+          </div>
+          {manualPhotos.length > 0 ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {manualPhotos.map((photo) => {
+                const selected = selectedPhotos.has(photo.dataUrl);
+                return (
+                  <div key={photo.id} className="relative aspect-square rounded overflow-hidden border-2 border-[#00A4C7]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photo.dataUrl} alt={photo.name} className="w-full h-full object-cover" />
+                    <button onClick={() => togglePhoto(photo.dataUrl)} className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${selected ? 'bg-[#00A4C7]' : 'bg-gray-600'}`} />
+                    <button onClick={() => removeManualPhoto(photo.id, photo.dataUrl)} className="absolute top-1 left-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      x
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-600 text-xs">No manually uploaded photos yet.</p>
+          )}
+        </div>
+
+        {/* Photo grid */}
+        {ccPhotos.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-gray-400 text-sm">
+                {ccPhotos.length} photo(s) | {selectedPhotos.size} selected
+                {selectedPhotos.size === ccPhotos.length && ccPhotos.length > 0 && (
+                  <span className="text-green-400 ml-1">(all selected)</span>
+                )}
+              </p>
+              <button
+                onClick={() => {
+                  if (selectedPhotos.size === ccPhotos.length) {
+                    setSelectedPhotos(new Set());
+                  } else {
+                    setSelectedPhotos(new Set(ccPhotos.map((p) => getPhotoUrl(p)).filter(Boolean)));
+                  }
+                }}
+                className="text-[#00A4C7] text-xs hover:underline"
+              >
+                {selectedPhotos.size === ccPhotos.length ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {ccPhotos.map((photo) => {
+                const url = getPhotoUrl(photo);
+                const thumb = getThumbUrl(photo);
+                const selected = selectedPhotos.has(url);
+                return (
+                  <button
+                    key={photo.id}
+                    onClick={() => togglePhoto(url)}
+                    className={`relative aspect-square rounded overflow-hidden border-2 transition-colors ${
+                      selected ? 'border-[#00A4C7]' : 'border-transparent'
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={thumb}
+                      alt={`Photo ${photo.id}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {selected && (
+                      <div className="absolute top-1 right-1 w-5 h-5 bg-[#00A4C7] rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        &#10003;
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Workiz */}
       <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Workiz</h2>
@@ -615,137 +746,6 @@ export default function JobDetailPage() {
             Download Both
           </button>
         </div>
-      </div>
-
-      {/* CompanyCam Photos */}
-      <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-white">CompanyCam Photos</h2>
-            {ccMatchedProject && (
-              <p className="text-green-400 text-xs mt-1">Matched: {ccMatchedProject}</p>
-            )}
-          </div>
-          <button
-            onClick={searchCompanyCam}
-            disabled={ccSearching}
-            className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors disabled:opacity-50"
-          >
-            {ccSearching ? 'Searching...' : ccPhotos.length > 0 ? 'Refresh' : 'Find Photos'}
-          </button>
-        </div>
-
-        {!ccSearching && ccPhotos.length === 0 && ccProjects.length === 0 && !ccError && (
-          <p className="text-gray-500 text-sm mb-3">
-            Click &quot;Find Photos&quot; to search for project &quot;Starbucks #{job.storeNumber}{job.woNumber ? ` WO# ${job.woNumber}` : ''}&quot;
-          </p>
-        )}
-
-        {ccError && <p className="text-yellow-400 text-sm mb-3">{ccError}</p>}
-
-        {/* Fallback: manual project selection when no exact match */}
-        {ccProjects.length > 0 && ccPhotos.length === 0 && (
-          <div className="space-y-2 mb-4">
-            <p className="text-gray-400 text-sm">Select the correct project:</p>
-            {ccProjects.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => loadPhotos(p.id, p.name)}
-                disabled={ccLoadingPhotos}
-                className="block w-full text-left p-3 bg-[#0a0f1a] border border-[#374151] rounded hover:border-[#00A4C7] transition-colors"
-              >
-                <span className="text-white text-sm font-medium">{p.name}</span>
-                <span className="text-gray-500 text-xs ml-2">Click to load photos</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {ccLoadingPhotos && <p className="text-gray-500 text-sm">Loading photos...</p>}
-
-        {/* Manual photo upload */}
-        <div className="mt-4 pt-4 border-t border-[#1f2937]">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-gray-400 text-sm font-medium">Upload Photos Manually</p>
-            <label className="px-3 py-1.5 bg-[#374151] text-gray-300 rounded text-xs font-medium hover:bg-[#4b5563] transition-colors cursor-pointer">
-              + Add Photos
-              <input type="file" accept="image/*" multiple onChange={handleManualUpload} className="hidden" />
-            </label>
-          </div>
-          {manualPhotos.length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-              {manualPhotos.map((photo) => {
-                const selected = selectedPhotos.has(photo.dataUrl);
-                return (
-                  <div key={photo.id} className="relative aspect-square rounded overflow-hidden border-2 border-[#00A4C7]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photo.dataUrl} alt={photo.name} className="w-full h-full object-cover" />
-                    <button onClick={() => togglePhoto(photo.dataUrl)} className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${selected ? 'bg-[#00A4C7]' : 'bg-gray-600'}`} />
-                    <button onClick={() => removeManualPhoto(photo.id, photo.dataUrl)} className="absolute top-1 left-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      x
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-gray-600 text-xs">No manually uploaded photos yet.</p>
-          )}
-        </div>
-
-        {/* Photo grid */}
-        {ccPhotos.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-gray-400 text-sm">
-                {ccPhotos.length} photo(s) | {selectedPhotos.size} selected
-                {selectedPhotos.size === ccPhotos.length && ccPhotos.length > 0 && (
-                  <span className="text-green-400 ml-1">(all selected)</span>
-                )}
-              </p>
-              <button
-                onClick={() => {
-                  if (selectedPhotos.size === ccPhotos.length) {
-                    setSelectedPhotos(new Set());
-                  } else {
-                    setSelectedPhotos(new Set(ccPhotos.map((p) => getPhotoUrl(p)).filter(Boolean)));
-                  }
-                }}
-                className="text-[#00A4C7] text-xs hover:underline"
-              >
-                {selectedPhotos.size === ccPhotos.length ? 'Deselect All' : 'Select All'}
-              </button>
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-              {ccPhotos.map((photo) => {
-                const url = getPhotoUrl(photo);
-                const thumb = getThumbUrl(photo);
-                const selected = selectedPhotos.has(url);
-                return (
-                  <button
-                    key={photo.id}
-                    onClick={() => togglePhoto(url)}
-                    className={`relative aspect-square rounded overflow-hidden border-2 transition-colors ${
-                      selected ? 'border-[#00A4C7]' : 'border-transparent'
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={thumb}
-                      alt={`Photo ${photo.id}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {selected && (
-                      <div className="absolute top-1 right-1 w-5 h-5 bg-[#00A4C7] rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        &#10003;
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Email Sending */}
