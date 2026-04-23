@@ -751,8 +751,8 @@ export default function JobDetailPage() {
           </p>
         )}
         <div className="flex flex-wrap gap-3">
-          {!job.workizJobId && (
-            <button
+          <button
+            disabled={!job.woNumber || saving}
               onClick={async () => {
                 setEmailStatus('');
                 try {
@@ -818,9 +818,9 @@ export default function JobDetailPage() {
               }}
               className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors"
             >
-              Push Job to Workiz
+              {job.workizJobId ? 'Push Again to Workiz' : 'Push Job to Workiz'}
             </button>
-          )}
+          {!job.woNumber && <p className="text-xs text-yellow-400 mt-2">WO # required before pushing</p>}
           <button
             onClick={async () => {
               if (!job.workizJobId) { setEmailStatus('Push job to Workiz first.'); return; }
