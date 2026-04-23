@@ -469,6 +469,130 @@ export default function JobDetailPage() {
         </div>
       </div>
 
+      {/* Workiz sync info */}
+      {job.workizJobId && (
+        <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-4 text-sm text-gray-400">
+          Workiz Job ID: <span className="text-white font-mono">{job.workizJobId}</span>
+        </div>
+      )}
+
+      {/* Workiz */}
+      <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Workiz</h2>
+        {job.workizJobId && (
+          <p className="text-gray-400 text-sm mb-3">
+            Job ID: <span className="text-white font-mono">{job.workizJobId}</span>
+          </p>
+        )}
+        <div className="flex flex-wrap gap-3">
+          <button
+            disabled={!job.woNumber || saving}
+              onClick={async () => {
+                setEmailStatus('');
+                try {
+                  const res = await fetch('/api/workiz/jobs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      FirstName: `Store # ${job.storeNumber}`,
+                      LastName: `Workorder # ${job.woNumber || ''}`,
+                      Company: 'Superclean',
+                      Address: job.address || '',
+                      City: job.city || '',
+                      State: job.state || 'IL',
+                      Country: 'US',
+                      PostalCode: job.zip || '',
+                      Email: 'documents@gosuperclean.com',
+                      JobType: 'Starbucks Cleaning',
+                      JobSource: 'National Accounts',
+                      type_of_job: 'National Accounts',
+                      ServiceArea: (() => {
+                        const zip = job.zip || '';
+                        const zipMap: Record<string, string> = {
+                          '60005': 'ARLINGTON HEIGHTS - 60005',
+                          '60004': 'ARLINGTON HEIGHTS - 60005',
+                          '60006': 'ARLINGTON HEIGHTS - 60005',
+                          '60010': 'BARRINGTON - 60010',
+                          '60011': 'BARRINGTON - 60010',
+                          '60021': 'BARRINGTON - 60010',
+                          '60047': 'BARRINGTON - 60010',
+                          '60074': 'PALATINE - 60074',
+                          '60067': 'PALATINE - 60074',
+                          '60103': 'ARLINGTON HEIGHTS - 60005',
+                          '60120': 'SCHAUMBURG - 60194',
+                          '60173': 'SCHAUMBURG - 60194',
+                          '60176': 'SCHAUMBURG - 60194',
+                          '60177': 'SCHAUMBURG - 60194',
+                          '60194': 'SCHAUMBURG - 60194',
+                          '60195': 'SCHAUMBURG - 60194',
+                          '60160': 'MELROSE PARK - 60160',
+                          '60161': 'MELROSE PARK - 60160',
+                          '60162': 'MELROSE PARK - 60160',
+                          '60163': 'MELROSE PARK - 60160',
+                          '60164': 'MELROSE PARK - 60160',
+                        };
+                        return zipMap[zip] || 'Schaumburg';
+                      })(),
+                      JobNotes: `Starbucks #${job.storeNumber} WO# ${job.woNumber || ''}`,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data.error || !data.success) {
+                    setEmailStatus(`Workiz push failed: ${data.error || 'Unknown error'}`);
+                  } else {
+                    const workizUuid = data?.data?.UUID || data?.data?.uuid;
+                    if (workizUuid) {
+                      await updateField('workizJobId', workizUuid);
+                    }
+                    setEmailStatus(data.mode === 'mock' ? 'Workiz (mock): job push simulated' : 'Job pushed to Workiz!');
+                  }
+                } catch {
+                  setEmailStatus('Failed to push to Workiz.');
+                }
+              }}
+              className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors"
+            >
+              {job.workizJobId ? 'Push Again to Workiz' : 'Push Job to Workiz'}
+            </button>
+          {!job.woNumber && <p className="text-xs text-yellow-400 mt-2">WO # required before pushing</p>}
+          <button
+            onClick={async () => {
+              if (!job.workizJobId) { setEmailStatus('Push job to Workiz first.'); return; }
+              setEmailStatus('');
+              try {
+                const res = await fetch('/api/workiz/invoice', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    JobUUID: job.workizJobId,
+                    Items: [{
+                      description: `Pressure Wash Patio/Sidewalk/Drive Thru - Starbucks #${job.storeNumber}`,
+                      quantity: 1,
+                      price: job.price || 350,
+                    }],
+                  }),
+                });
+                const data = await res.json();
+                if (data.error || !data.success) {
+                  setEmailStatus(`Workiz invoice failed: ${data.error || 'Unknown error'}`);
+                } else {
+                  setEmailStatus(data.mode === 'mock' ? 'Workiz (mock): invoice creation simulated' : 'Invoice created in Workiz!');
+                }
+              } catch {
+                setEmailStatus('Failed to create Workiz invoice.');
+              }
+            }}
+            disabled={!job.workizJobId}
+            className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors disabled:opacity-50"
+          >
+            Create Invoice in Workiz
+          </button>
+        </div>
+        {!job.workizJobId && (
+          <p className="text-gray-500 text-xs mt-2">Push this job to Workiz first to enable invoice creation</p>
+        )}
+      </div>
+
       {/* Documents */}
       <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Documents</h2>
@@ -735,129 +859,6 @@ export default function JobDetailPage() {
         )}
       </div>
 
-      {/* Workiz sync info */}
-      {job.workizJobId && (
-        <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-4 text-sm text-gray-400">
-          Workiz Job ID: <span className="text-white font-mono">{job.workizJobId}</span>
-        </div>
-      )}
-
-      {/* Workiz */}
-      <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Workiz</h2>
-        {job.workizJobId && (
-          <p className="text-gray-400 text-sm mb-3">
-            Job ID: <span className="text-white font-mono">{job.workizJobId}</span>
-          </p>
-        )}
-        <div className="flex flex-wrap gap-3">
-          <button
-            disabled={!job.woNumber || saving}
-              onClick={async () => {
-                setEmailStatus('');
-                try {
-                  const res = await fetch('/api/workiz/jobs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      FirstName: `Store # ${job.storeNumber}`,
-                      LastName: `Workorder # ${job.woNumber || ''}`,
-                      Company: 'Superclean',
-                      Address: job.address || '',
-                      City: job.city || '',
-                      State: job.state || 'IL',
-                      Country: 'US',
-                      PostalCode: job.zip || '',
-                      Email: 'documents@gosuperclean.com',
-                      JobType: 'Starbucks Cleaning',
-                      JobSource: 'National Accounts',
-                      type_of_job: 'National Accounts',
-                      ServiceArea: (() => {
-                        const zip = job.zip || '';
-                        const zipMap: Record<string, string> = {
-                          '60005': 'ARLINGTON HEIGHTS - 60005',
-                          '60004': 'ARLINGTON HEIGHTS - 60005',
-                          '60006': 'ARLINGTON HEIGHTS - 60005',
-                          '60010': 'BARRINGTON - 60010',
-                          '60011': 'BARRINGTON - 60010',
-                          '60021': 'BARRINGTON - 60010',
-                          '60047': 'BARRINGTON - 60010',
-                          '60074': 'PALATINE - 60074',
-                          '60067': 'PALATINE - 60074',
-                          '60103': 'ARLINGTON HEIGHTS - 60005',
-                          '60120': 'SCHAUMBURG - 60194',
-                          '60173': 'SCHAUMBURG - 60194',
-                          '60176': 'SCHAUMBURG - 60194',
-                          '60177': 'SCHAUMBURG - 60194',
-                          '60194': 'SCHAUMBURG - 60194',
-                          '60195': 'SCHAUMBURG - 60194',
-                          '60160': 'MELROSE PARK - 60160',
-                          '60161': 'MELROSE PARK - 60160',
-                          '60162': 'MELROSE PARK - 60160',
-                          '60163': 'MELROSE PARK - 60160',
-                          '60164': 'MELROSE PARK - 60160',
-                        };
-                        return zipMap[zip] || 'Schaumburg';
-                      })(),
-                      JobNotes: `Starbucks #${job.storeNumber} WO# ${job.woNumber || ''}`,
-                    }),
-                  });
-                  const data = await res.json();
-                  if (data.error || !data.success) {
-                    setEmailStatus(`Workiz push failed: ${data.error || 'Unknown error'}`);
-                  } else {
-                    const workizUuid = data?.data?.UUID || data?.data?.uuid;
-                    if (workizUuid) {
-                      await updateField('workizJobId', workizUuid);
-                    }
-                    setEmailStatus(data.mode === 'mock' ? 'Workiz (mock): job push simulated' : 'Job pushed to Workiz!');
-                  }
-                } catch {
-                  setEmailStatus('Failed to push to Workiz.');
-                }
-              }}
-              className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors"
-            >
-              {job.workizJobId ? 'Push Again to Workiz' : 'Push Job to Workiz'}
-            </button>
-          {!job.woNumber && <p className="text-xs text-yellow-400 mt-2">WO # required before pushing</p>}
-          <button
-            onClick={async () => {
-              if (!job.workizJobId) { setEmailStatus('Push job to Workiz first.'); return; }
-              setEmailStatus('');
-              try {
-                const res = await fetch('/api/workiz/invoice', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    JobUUID: job.workizJobId,
-                    Items: [{
-                      description: `Pressure Wash Patio/Sidewalk/Drive Thru - Starbucks #${job.storeNumber}`,
-                      quantity: 1,
-                      price: job.price || 350,
-                    }],
-                  }),
-                });
-                const data = await res.json();
-                if (data.error || !data.success) {
-                  setEmailStatus(`Workiz invoice failed: ${data.error || 'Unknown error'}`);
-                } else {
-                  setEmailStatus(data.mode === 'mock' ? 'Workiz (mock): invoice creation simulated' : 'Invoice created in Workiz!');
-                }
-              } catch {
-                setEmailStatus('Failed to create Workiz invoice.');
-              }
-            }}
-            disabled={!job.workizJobId}
-            className="px-4 py-2 bg-[#00A4C7] text-white rounded text-sm font-medium hover:bg-[#0090b0] transition-colors disabled:opacity-50"
-          >
-            Create Invoice in Workiz
-          </button>
-        </div>
-        {!job.workizJobId && (
-          <p className="text-gray-500 text-xs mt-2">Push this job to Workiz first to enable invoice creation</p>
-        )}
-      </div>
     </div>
   );
 }
