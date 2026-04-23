@@ -469,13 +469,6 @@ export default function JobDetailPage() {
         </div>
       </div>
 
-      {/* Workiz sync info */}
-      {job.workizJobId && (
-        <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-4 text-sm text-gray-400">
-          Workiz Job ID: <span className="text-white font-mono">{job.workizJobId}</span>
-        </div>
-      )}
-
       {/* Workiz */}
       <div className="bg-[#111827] rounded-lg border border-[#1f2937] p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Workiz</h2>
