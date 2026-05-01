@@ -362,6 +362,7 @@ export default function JobDetailPage() {
     setGeocoding(true);
     try {
       const params = new URLSearchParams({ address: job.address, city: job.city });
+      if (job.state) params.set('state', job.state);
       const res = await fetch(`/api/geocode?${params}`);
       const data = await res.json();
       if (data.found) {
