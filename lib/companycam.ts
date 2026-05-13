@@ -239,21 +239,11 @@ export async function findStarbucksProject(
       }
     }
 
-    // 6. Street-name fallback - "Mannheim" in the last 30 days, with photos.
-    const streetName = extractStreetName(address);
-    if (streetName && streetName.length >= 3) {
-      const streetResults = await searchProjects(streetName);
-      const thirtyDaysAgoMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      const recent = streetResults.filter((p) => {
-        if (!p.updated_at) return false;
-        if ((p.photo_count ?? 0) === 0) return false;
-        return toMillis(p.updated_at) >= thirtyDaysAgoMs;
-      });
-      if (recent.length > 0) {
-        recent.sort((a, b) => b.updated_at - a.updated_at);
-        return recent[0];
-      }
-    }
+    // Street-name-only fallback intentionally removed.
+    // Searching by street name alone (e.g. "Lake Cook") matches any address on
+    // that road and cannot distinguish between locations like 1085 Lake Cook Rd
+    // and 325 E Lake Cook Rd. If we've reached this point without a match,
+    // return null so the UI correctly reports no photos found.
   }
 
   return null;
