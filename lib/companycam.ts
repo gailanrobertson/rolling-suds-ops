@@ -47,6 +47,18 @@ export async function searchProjects(query: string): Promise<CCProject[]> {
 }
 
 /**
+ * Convert Illinois highway designators to the IL-XX format CompanyCam uses.
+ * "4196-A Rt 83"   → "4196-A IL-83"
+ * "1085 Route 12"  → "1085 IL-12"
+ * "US Route 45"    → "US-45"
+ */
+function normalizeHighwayAddress(address: string): string {
+  return address
+    .replace(/\b(?:IL\s+)?(?:Rt|Rte|Route|Hwy|SR|State\s+Rt|State\s+Route)\s+(\d+)/gi, 'IL-$1')
+    .replace(/\bUS\s+(?:Hwy\s+|Route\s+|Rt\s+|Rte\s+)?(\d+)/gi, 'US-$1');
+}
+
+/**
  * Returns true if a project is a real job (not a Workiz placeholder).
  * Workiz placeholders have names starting with "Workiz" and 0 photos.
  */
@@ -165,7 +177,21 @@ export async function findStarbucksProject(
   if (address) {
     const normalizedTarget = normalizeAddress(address);
 
-    // 3. Full address search with tolerant matching
+    // 3. Highway-style address: convert "Rt 83" → "IL-83" before searching.
+    // CompanyCam stores addresses in IL-XX format which won't match "Rt 83".
+    const highwayAddress = normalizeHighwayAddress(address);
+    if (highwayAddress !== address) {
+      const hwResults = await searchProjects(highwayAddress);
+      const validHw = hwResults.filter(isRealProject);
+      if (validHw.length > 0) {
+        const preferred = validHw.find(
+          (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
+        );
+        return preferred || validHw[0];
+      }
+    }
+
+    // 4. Full address search with tolerant matching
     const addrResults = await searchProjects(address);
     const validAddr = addrResults.filter(isRealProject);
     if (validAddr.length > 0) {
@@ -199,10 +225,12 @@ export async function findStarbucksProject(
       }
     }
 
-    // 4. Street number only - handles state roads (e.g. "1718 IL-171" vs "1718 S 1st Ave")
+    // 5. Street number only - handles state roads (e.g. "1718 IL-171" vs "1718 S 1st Ave")
+    // Use regex match instead of exact test so "4196-A" → "4196" is handled correctly.
     const parts = normalizedTarget.split(' ');
-    const streetNum = parts[0];
-    if (streetNum && /^[0-9]{3,}$/.test(streetNum)) {
+    const streetNumMatch = parts[0]?.match(/^(\d{3,})/);
+    const streetNum = streetNumMatch ? streetNumMatch[1] : null;
+    if (streetNum) {
       const numResults = await searchProjects(streetNum);
       const validNum = numResults.filter(isRealProject);
       if (validNum.length > 0) {
@@ -211,7 +239,7 @@ export async function findStarbucksProject(
       }
     }
 
-    // 5. Street-name fallback - "Mannheim" in the last 30 days, with photos.
+    // 6. Street-name fallback - "Mannheim" in the last 30 days, with photos.
     const streetName = extractStreetName(address);
     if (streetName && streetName.length >= 3) {
       const streetResults = await searchProjects(streetName);
