@@ -6,6 +6,9 @@ const EMAIL_SENDER_NAME = process.env.EMAIL_SENDER_NAME || 'Max Gelfman';
 const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || 'max.gelfman@rollingsuds.com';
 const EMAIL_CC = process.env.EMAIL_CC || 'max.gelfman@rollingsuds.com';
 
+// Always CC'd on all invoice and photo emails
+const PERMANENT_CC = 'deannedra.hamilton@gosuperclean.com';
+
 interface Attachment {
   name: string;
   contentType: string;
@@ -27,7 +30,10 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
     from: `${EMAIL_SENDER_NAME} <${EMAIL_FROM}>`,
     replyTo: EMAIL_REPLY_TO || undefined,
     to: [options.to],
-    cc: EMAIL_CC ? [EMAIL_CC] : undefined,
+    cc: [
+      ...(EMAIL_CC ? EMAIL_CC.split(',').map((e) => e.trim()).filter(Boolean) : []),
+      PERMANENT_CC,
+    ],
     subject: options.subject,
     html: options.body,
     attachments: options.attachments.map((att) => ({
