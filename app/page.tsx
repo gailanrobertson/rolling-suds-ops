@@ -18,11 +18,11 @@ export default function Dashboard() {
       .catch(() => setLoading(false));
   }, []);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   const tonightJobs = jobs.filter((j) => j.serviceDate === today);
   const thisWeek = getWeekDates();
   const weekJobs = jobs.filter((j) => thisWeek.includes(j.serviceDate));
-  const thisMonth = new Date().toISOString().slice(0, 7);
+  const thisMonth = localDateStr().slice(0, 7);
   const monthJobs = jobs.filter((j) => j.serviceDate.startsWith(thisMonth));
   const completed = monthJobs.filter((j) => j.status === 'completed');
   const pending = monthJobs.filter((j) => j.status !== 'completed');
@@ -157,6 +157,11 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+/** Returns a YYYY-MM-DD string in local time (not UTC) to avoid day-shift bugs. */
+function localDateStr(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 function getWeekDates(): string[] {
   const now = new Date();
   const day = now.getDay();
@@ -166,7 +171,7 @@ function getWeekDates(): string[] {
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    dates.push(d.toISOString().split('T')[0]);
+    dates.push(localDateStr(d));
   }
   return dates;
 }

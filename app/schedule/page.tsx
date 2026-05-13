@@ -120,9 +120,9 @@ export default function SchedulePage() {
           ))}
 
           {dates.map((date) => {
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = localDateStr(date);
             const dayJobs = jobs.filter((j) => j.serviceDate === dateStr);
-            const isToday = dateStr === new Date().toISOString().split('T')[0];
+            const isToday = dateStr === localDateStr();
 
             return (
               <div
@@ -175,6 +175,11 @@ export default function SchedulePage() {
       </div>
     </div>
   );
+}
+
+/** Returns a YYYY-MM-DD string in local time (not UTC) to avoid day-shift bugs. */
+function localDateStr(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 function getWeekDates(d: Date): Date[] {
