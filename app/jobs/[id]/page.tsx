@@ -539,7 +539,14 @@ export default function JobDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <EditField label="WO #" value={job.woNumber || ''} onSave={(v) => updateField('woNumber', v)} />
+          <EditField label="WO #" value={job.woNumber || ''} onSave={async (v) => {
+            const prevWo = job.woNumber || '';
+            const currentInvoice = job.invoiceNumber || '';
+            // Auto-fill invoice # if it's blank or was previously auto-filled from the old WO#
+            const wasAutoFilled = !currentInvoice || currentInvoice === `inv${prevWo}`;
+            await updateField('woNumber', v);
+            if (wasAutoFilled && v) await updateField('invoiceNumber', `inv${v}`);
+          }} />
           <EditField label="Invoice #" value={job.invoiceNumber || ''} onSave={(v) => updateField('invoiceNumber', v)} />
           <div>
             <label className="block text-sm text-gray-400 mb-1">Assigned Tech</label>
@@ -592,10 +599,11 @@ export default function JobDetailPage() {
           <p className="text-gray-400 text-xs mt-0.5">
             Sends invoice/work order to documents@gosuperclean.com, photos to starbucks@gosuperclean.com, and pushes job to Workiz.
           </p>
-          {(!job.woNumber || selectedPhotos.size === 0 || !emailConfigured) && (
+          {(!job.woNumber || !job.invoiceNumber || selectedPhotos.size === 0 || !emailConfigured) && (
             <p className="text-yellow-400 text-xs mt-1">
               {[
                 !job.woNumber && 'WO # required',
+                !job.invoiceNumber && 'Invoice # required',
                 selectedPhotos.size === 0 && 'No photos selected',
                 !emailConfigured && 'Email not configured',
               ].filter(Boolean).join(' · ')}
@@ -604,7 +612,7 @@ export default function JobDetailPage() {
         </div>
         <button
           onClick={sendAll}
-          disabled={sendingAll || !job.woNumber || selectedPhotos.size === 0 || !emailConfigured}
+          disabled={sendingAll || !job.woNumber || !job.invoiceNumber || selectedPhotos.size === 0 || !emailConfigured}
           className="shrink-0 px-5 py-2.5 bg-[#00A4C7] text-white rounded text-sm font-semibold hover:bg-[#0090b0] transition-colors disabled:opacity-40 whitespace-nowrap"
         >
           {sendingAll ? 'Sending…' : 'Send All'}
