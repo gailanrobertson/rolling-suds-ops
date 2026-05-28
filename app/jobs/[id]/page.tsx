@@ -542,10 +542,25 @@ export default function JobDetailPage() {
           <EditField label="WO #" value={job.woNumber || ''} onSave={async (v) => {
             const prevWo = job.woNumber || '';
             const currentInvoice = job.invoiceNumber || '';
-            // Auto-fill invoice # if it's blank or was previously auto-filled from the old WO#
             const wasAutoFilled = !currentInvoice || currentInvoice === `inv${prevWo}`;
-            await updateField('woNumber', v);
-            if (wasAutoFilled && v) await updateField('invoiceNumber', `inv${v}`);
+            const autoInvoice = wasAutoFilled && v ? `inv${v}` : null;
+
+            // Update both fields in one setJob call to avoid stale-closure overwrite
+            const updates: Record<string, string> = { woNumber: v, updatedAt: new Date().toISOString() };
+            if (autoInvoice) updates.invoiceNumber = autoInvoice;
+            setJob((prev) => prev ? { ...prev, ...updates } : prev);
+
+            // Persist each field
+            await fetch(`/api/jobs/${id}`, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ woNumber: v }),
+            });
+            if (autoInvoice) {
+              await fetch(`/api/jobs/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invoiceNumber: autoInvoice }),
+              });
+            }
           }} />
           <EditField label="Invoice #" value={job.invoiceNumber || ''} onSave={(v) => updateField('invoiceNumber', v)} />
           <div>
