@@ -195,40 +195,42 @@ export async function findStarbucksProject(
     const addrResults = await searchProjects(address);
     const validAddr = addrResults.filter(isRealProject);
     if (validAddr.length > 0) {
-      const strong = validAddr.filter((p) => {
-        if (!p.name) return false;
-        const np = normalizeAddress(p.name);
-        return np && normalizedTarget && (np.includes(normalizedTarget) || normalizedTarget.includes(np));
-      });
-      const pool = strong.length > 0 ? strong : validAddr;
-      const preferred = pool.find(
+      const preferred = validAddr.find(
         (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
       );
-      return preferred || pool[0];
+      return preferred || validAddr[0];
     }
 
-    // 3b. Re-search using the normalized (abbreviated) address form
+    // 4b. Street address only (strip city/state — trailing ", Chicago, IL 60621" can
+    // confuse CompanyCam's search and prevent a match on the street portion alone).
+    const streetOnly = address.split(',')[0].trim();
+    if (streetOnly && streetOnly !== address.trim()) {
+      const streetOnlyResults = await searchProjects(streetOnly);
+      const validStreetOnly = streetOnlyResults.filter(isRealProject);
+      if (validStreetOnly.length > 0) {
+        const preferred = validStreetOnly.find(
+          (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
+        );
+        return preferred || validStreetOnly[0];
+      }
+    }
+
+    // 4c. Re-search using the normalized (abbreviated) address form
     if (normalizedTarget && normalizedTarget !== address.toLowerCase().trim()) {
       const normResults = await searchProjects(normalizedTarget);
       const validNorm = normResults.filter(isRealProject);
       if (validNorm.length > 0) {
-        const strong = validNorm.filter((p) => {
-          if (!p.name) return false;
-          const np = normalizeAddress(p.name);
-          return np && (np.includes(normalizedTarget) || normalizedTarget.includes(np));
-        });
-        const pool = strong.length > 0 ? strong : validNorm;
-        const preferred = pool.find(
+        const preferred = validNorm.find(
           (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
         );
-        return preferred || pool[0];
+        return preferred || validNorm[0];
       }
     }
 
-    // 5. Street number only - handles state roads (e.g. "1718 IL-171" vs "1718 S 1st Ave")
-    // Use regex match instead of exact test so "4196-A" → "4196" is handled correctly.
+    // 5. Street number only — handles state roads and short house numbers.
+    // Lowered threshold to \d{2,} so 2-digit numbers like "39" are not skipped.
     const parts = normalizedTarget.split(' ');
-    const streetNumMatch = parts[0]?.match(/^(\d{3,})/);
+    const streetNumMatch = parts[0]?.match(/^(\d{2,})/);
     const streetNum = streetNumMatch ? streetNumMatch[1] : null;
     if (streetNum) {
       const numResults = await searchProjects(streetNum);
@@ -239,11 +241,30 @@ export async function findStarbucksProject(
       }
     }
 
-    // Street-name-only fallback intentionally removed.
-    // Searching by street name alone (e.g. "Lake Cook") matches any address on
-    // that road and cannot distinguish between locations like 1085 Lake Cook Rd
-    // and 325 E Lake Cook Rd. If we've reached this point without a match,
-    // return null so the UI correctly reports no photos found.
+    // 6. Street name + address number verification (safe street-name fallback).
+    // Unlike the removed street-name-only fallback, this step verifies the
+    // CompanyCam project's stored address contains our street number before
+    // accepting the result — so "La Salle" returns "39 S LaSalle" not "325 LaSalle".
+    const streetName = extractStreetName(address);
+    const rawStreetNum = address.trim().match(/^(\d+)/)?.[1] ?? null;
+    if (streetName && rawStreetNum) {
+      const nameResults = await searchProjects(streetName);
+      const verified = nameResults.filter(isRealProject).filter((p) => {
+        const ccAddr = (p.address?.street_address_1 || '').toLowerCase();
+        if (!ccAddr) return false; // No address on CC project — skip to avoid false match
+        return ccAddr.includes(rawStreetNum);
+      });
+      if (verified.length > 0) {
+        verified.sort((a, b) => b.updated_at - a.updated_at);
+        const preferred = verified.find(
+          (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
+        );
+        return preferred || verified[0];
+      }
+    }
+
+    // No match found after all strategies. Return null so the UI correctly
+    // reports "no photos found" instead of returning a wrong-location result.
   }
 
   return null;
