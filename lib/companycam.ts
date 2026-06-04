@@ -177,54 +177,68 @@ export async function findStarbucksProject(
   if (address) {
     const normalizedTarget = normalizeAddress(address);
 
-    // 3. Highway-style address: convert "Rt 83" → "IL-83" before searching.
-    // CompanyCam stores addresses in IL-XX format which won't match "Rt 83".
-    const highwayAddress = normalizeHighwayAddress(address);
-    if (highwayAddress !== address) {
-      const hwResults = await searchProjects(highwayAddress);
-      const validHw = hwResults.filter(isRealProject);
-      if (validHw.length > 0) {
-        const preferred = validHw.find(
-          (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
-        );
-        return preferred || validHw[0];
-      }
-    }
+    // Extract street number and primary street-name keyword used for address verification.
+    // "200 E Randolph St, Chicago, IL" → rawStreetNum="200", streetKeyword="randolph"
+    // "333 N Michigan Ave"             → rawStreetNum="333", streetKeyword="michigan"
+    const rawStreetNum = address.trim().match(/^(\d+)/)?.[1] ?? null;
+    const streetKeyword = extractStreetName(address)?.split(' ')[0] ?? null;
 
-    // 4. Full address search with tolerant matching
-    const addrResults = await searchProjects(address);
-    const validAddr = addrResults.filter(isRealProject);
-    if (validAddr.length > 0) {
-      const preferred = validAddr.find(
+    /**
+     * Pick the best verified result from a candidate list.
+     *
+     * Priority 1 — Name-verified: project name contains "starbucks" or the store number.
+     *   Catches the standard naming convention "Starbucks #02264 WO# 1979789".
+     *
+     * Priority 2 — Address-verified: the CC project's own address field contains both
+     *   our street number AND our street-name keyword.
+     *   "200 S Michigan Ave" searching for "200 E Randolph St":
+     *     number matches (200 ✓) but keyword fails (michigan ≠ randolph ✗) → rejected.
+     *   "Shane" at any address: name fails, address keyword fails → rejected.
+     *
+     * Returns null if no result passes either check — never returns unverified results.
+     */
+    function bestVerified(candidates: CCProject[]): CCProject | null {
+      const real = candidates.filter(isRealProject);
+      // Priority 1: name-verified
+      const byName = real.find(
         (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
       );
-      return preferred || validAddr[0];
+      if (byName) return byName;
+      // Priority 2: address-verified (requires CC address field to be populated)
+      if (rawStreetNum && streetKeyword) {
+        const byAddr = real.find((p) => {
+          const ccAddr = (p.address?.street_address_1 || '').toLowerCase();
+          if (!ccAddr) return false;
+          return ccAddr.includes(rawStreetNum) && ccAddr.includes(streetKeyword);
+        });
+        if (byAddr) return byAddr;
+      }
+      return null;
     }
 
-    // 4b. Street address only (strip city/state — trailing ", Chicago, IL 60621" can
+    // 3. Highway-style address: convert "Rt 83" → "IL-83" before searching.
+    const highwayAddress = normalizeHighwayAddress(address);
+    if (highwayAddress !== address) {
+      const match = bestVerified(await searchProjects(highwayAddress));
+      if (match) return match;
+    }
+
+    // 4. Full address search
+    const match4 = bestVerified(await searchProjects(address));
+    if (match4) return match4;
+
+    // 4b. Street address only (strip city/state — trailing ", Chicago, IL 60601" can
     // confuse CompanyCam's search and prevent a match on the street portion alone).
     const streetOnly = address.split(',')[0].trim();
     if (streetOnly && streetOnly !== address.trim()) {
-      const streetOnlyResults = await searchProjects(streetOnly);
-      const validStreetOnly = streetOnlyResults.filter(isRealProject);
-      if (validStreetOnly.length > 0) {
-        const preferred = validStreetOnly.find(
-          (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
-        );
-        return preferred || validStreetOnly[0];
-      }
+      const match4b = bestVerified(await searchProjects(streetOnly));
+      if (match4b) return match4b;
     }
 
-    // 4c. Re-search using the normalized (abbreviated) address form
+    // 4c. Normalized (abbreviated) address form
     if (normalizedTarget && normalizedTarget !== address.toLowerCase().trim()) {
-      const normResults = await searchProjects(normalizedTarget);
-      const validNorm = normResults.filter(isRealProject);
-      if (validNorm.length > 0) {
-        const preferred = validNorm.find(
-          (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
-        );
-        return preferred || validNorm[0];
-      }
+      const match4c = bestVerified(await searchProjects(normalizedTarget));
+      if (match4c) return match4c;
     }
 
     // 5. Street number only — handles state roads and short house numbers.
@@ -233,33 +247,26 @@ export async function findStarbucksProject(
     const streetNumMatch = parts[0]?.match(/^(\d{2,})/);
     const streetNum = streetNumMatch ? streetNumMatch[1] : null;
     if (streetNum) {
-      const numResults = await searchProjects(streetNum);
-      const validNum = numResults.filter(isRealProject);
-      if (validNum.length > 0) {
-        validNum.sort((a, b) => b.updated_at - a.updated_at);
-        return validNum[0];
-      }
+      const match5 = bestVerified(await searchProjects(streetNum));
+      if (match5) return match5;
     }
 
-    // 6. Street name + address number verification (safe street-name fallback).
-    // Unlike the removed street-name-only fallback, this step verifies the
-    // CompanyCam project's stored address contains our street number before
-    // accepting the result — so "La Salle" returns "39 S LaSalle" not "325 LaSalle".
+    // 6. Street name search — verified by street number in CC address field.
+    // Handles cases like "39 S La Salle" where CC stores it as "LaSalle" (one word).
     const streetName = extractStreetName(address);
-    const rawStreetNum = address.trim().match(/^(\d+)/)?.[1] ?? null;
     if (streetName && rawStreetNum) {
-      const nameResults = await searchProjects(streetName);
-      const verified = nameResults.filter(isRealProject).filter((p) => {
+      const nameResults = (await searchProjects(streetName)).filter(isRealProject);
+      // First try full bestVerified (name or address keyword match)
+      const match6 = bestVerified(nameResults);
+      if (match6) return match6;
+      // Fallback: at minimum require the CC address field contains our street number
+      const numVerified = nameResults.filter((p) => {
         const ccAddr = (p.address?.street_address_1 || '').toLowerCase();
-        if (!ccAddr) return false; // No address on CC project — skip to avoid false match
-        return ccAddr.includes(rawStreetNum);
+        return ccAddr ? ccAddr.includes(rawStreetNum) : false;
       });
-      if (verified.length > 0) {
-        verified.sort((a, b) => b.updated_at - a.updated_at);
-        const preferred = verified.find(
-          (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
-        );
-        return preferred || verified[0];
+      if (numVerified.length > 0) {
+        numVerified.sort((a, b) => b.updated_at - a.updated_at);
+        return numVerified[0];
       }
     }
 
