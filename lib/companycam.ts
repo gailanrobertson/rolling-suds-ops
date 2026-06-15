@@ -180,8 +180,11 @@ export async function findStarbucksProject(
     // Extract street number and primary street-name keyword used for address verification.
     // "200 E Randolph St, Chicago, IL" → rawStreetNum="200", streetKeyword="randolph"
     // "333 N Michigan Ave"             → rawStreetNum="333", streetKeyword="michigan"
+    // "9900 Route 47, Huntley, IL"     → rawStreetNum="9900", streetKeyword="il-47"
+    // Keyword is extracted from the highway-normalized form so "Route 47" → "IL-47"
+    // matches what CompanyCam actually stores, not the raw "route" word.
     const rawStreetNum = address.trim().match(/^(\d+)/)?.[1] ?? null;
-    const streetKeyword = extractStreetName(address)?.split(' ')[0] ?? null;
+    const streetKeyword = extractStreetName(normalizeHighwayAddress(address))?.split(' ')[0] ?? null;
 
     /**
      * Pick the best verified result from a candidate list.
