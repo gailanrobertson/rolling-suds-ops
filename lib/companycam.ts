@@ -208,9 +208,11 @@ export async function findStarbucksProject(
       );
       if (byName) return byName;
       // Priority 2: address-verified (requires CC address field to be populated)
+      // Normalize the CC address the same way we normalize our address so that
+      // "Illinois Rte 31" → "Illinois IL-31" and our streetKeyword "il-31" matches.
       if (rawStreetNum && streetKeyword) {
         const byAddr = real.find((p) => {
-          const ccAddr = (p.address?.street_address_1 || '').toLowerCase();
+          const ccAddr = normalizeHighwayAddress(p.address?.street_address_1 || '').toLowerCase();
           if (!ccAddr) return false;
           return ccAddr.includes(rawStreetNum) && ccAddr.includes(streetKeyword);
         });
