@@ -177,14 +177,36 @@ export async function findStarbucksProject(
   if (address) {
     const normalizedTarget = normalizeAddress(address);
 
-    // Extract street number and primary street-name keyword used for address verification.
+    // Extract street number and primary street-name keywords used for address verification.
     // "200 E Randolph St, Chicago, IL" → rawStreetNum="200", streetKeyword="randolph"
-    // "333 N Michigan Ave"             → rawStreetNum="333", streetKeyword="michigan"
     // "9900 Route 47, Huntley, IL"     → rawStreetNum="9900", streetKeyword="il-47"
-    // Keyword is extracted from the highway-normalized form so "Route 47" → "IL-47"
-    // matches what CompanyCam actually stores, not the raw "route" word.
+    // "6000 Northwest Hwy, Crystal Lake, IL" → rawStreetNum="6000", streetKeyword="crystal" (broken by
+    //   normalizeAddress turning "northwest"→"nw"→directional stripped), rawKeyword="northwest" (fix)
     const rawStreetNum = address.trim().match(/^(\d+)/)?.[1] ?? null;
+    // Keyword from highway-normalized form handles "Route 47" → "IL-47".
     const streetKeyword = extractStreetName(normalizeHighwayAddress(address))?.split(' ')[0] ?? null;
+    // Raw keyword: same logic but does NOT abbreviate multi-word directionals, so "Northwest" is
+    // preserved as a keyword instead of being collapsed to "nw" and then stripped as a directional.
+    const rawKeyword = (() => {
+      const streetPart = address.split(',')[0].trim().toLowerCase();
+      const parts = streetPart.split(/\s+/);
+      const abbrevDirs = new Set(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']);
+      const suffs = new Set([
+        'st', 'ave', 'rd', 'dr', 'blvd', 'ln', 'pl', 'ct', 'hwy', 'pkwy',
+        'cir', 'ter', 'trl', 'way', 'street', 'avenue', 'road', 'drive',
+        'boulevard', 'highway', 'lane', 'place', 'court', 'parkway', 'circle',
+        'terrace', 'trail',
+      ]);
+      for (let i = 0; i < parts.length; i++) {
+        const w = parts[i];
+        if (!w) continue;
+        if (i === 0 && /^\d/.test(w)) continue;
+        if (abbrevDirs.has(w)) continue;
+        if (suffs.has(w)) continue;
+        return w;
+      }
+      return null;
+    })();
 
     /**
      * Pick the best verified result from a candidate list.
@@ -193,10 +215,10 @@ export async function findStarbucksProject(
      *   Catches the standard naming convention "Starbucks #02264 WO# 1979789".
      *
      * Priority 2 — Address-verified: the CC project's own address field contains both
-     *   our street number AND our street-name keyword.
-     *   "200 S Michigan Ave" searching for "200 E Randolph St":
-     *     number matches (200 ✓) but keyword fails (michigan ≠ randolph ✗) → rejected.
-     *   "Shane" at any address: name fails, address keyword fails → rejected.
+     *   our street number AND at least one street-name keyword.
+     *   Checks streetKeyword (highway-normalized: "il-47") and rawKeyword ("northwest")
+     *   so roads named "Northwest Hwy" and state routes like "IL-47" both match.
+     *   CC address is also highway-normalized so "Illinois Rte 31" → "Illinois IL-31".
      *
      * Returns null if no result passes either check — never returns unverified results.
      */
@@ -207,14 +229,15 @@ export async function findStarbucksProject(
         (p) => p.name && (p.name.toLowerCase().includes('starbucks') || p.name.includes(storeNumber))
       );
       if (byName) return byName;
-      // Priority 2: address-verified (requires CC address field to be populated)
-      // Normalize the CC address the same way we normalize our address so that
-      // "Illinois Rte 31" → "Illinois IL-31" and our streetKeyword "il-31" matches.
-      if (rawStreetNum && streetKeyword) {
+      // Priority 2: address-verified
+      if (rawStreetNum && (streetKeyword || rawKeyword)) {
         const byAddr = real.find((p) => {
           const ccAddr = normalizeHighwayAddress(p.address?.street_address_1 || '').toLowerCase();
           if (!ccAddr) return false;
-          return ccAddr.includes(rawStreetNum) && ccAddr.includes(streetKeyword);
+          if (!ccAddr.includes(rawStreetNum)) return false;
+          if (streetKeyword && ccAddr.includes(streetKeyword)) return true;
+          if (rawKeyword && ccAddr.includes(rawKeyword)) return true;
+          return false;
         });
         if (byAddr) return byAddr;
       }
