@@ -237,6 +237,13 @@ export async function findStarbucksProject(
           if (!ccAddr.includes(rawStreetNum)) return false;
           if (streetKeyword && ccAddr.includes(streetKeyword)) return true;
           if (rawKeyword && ccAddr.includes(rawKeyword)) return true;
+          // "Route 14" normalizes to "il-14" but CompanyCam may store it as "us-14".
+          // Accept either IL- or US- prefix for the same highway number.
+          const hwNum = streetKeyword?.match(/^(?:il|us)-(\d+)$/)?.[1];
+          if (hwNum) {
+            const hwPattern = new RegExp(`(?:il|us)-${hwNum}(?!\\d)`);
+            if (hwPattern.test(ccAddr)) return true;
+          }
           return false;
         });
         if (byAddr) return byAddr;
@@ -249,6 +256,13 @@ export async function findStarbucksProject(
     if (highwayAddress !== address) {
       const match = bestVerified(await searchProjects(highwayAddress));
       if (match) return match;
+      // 3b. "Route 14" normalizes to "IL-14" but CompanyCam may store it as "US-14".
+      // Try the US- prefix form so the search actually returns the project.
+      const usHighwayAddress = highwayAddress.replace(/\bIL-(\d+)/g, 'US-$1');
+      if (usHighwayAddress !== highwayAddress) {
+        const match3b = bestVerified(await searchProjects(usHighwayAddress));
+        if (match3b) return match3b;
+      }
     }
 
     // 4. Full address search
