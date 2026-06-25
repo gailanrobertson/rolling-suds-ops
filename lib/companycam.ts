@@ -187,6 +187,8 @@ export async function findStarbucksProject(
     const streetKeyword = extractStreetName(normalizeHighwayAddress(address))?.split(' ')[0] ?? null;
     // Raw keyword: same logic but does NOT abbreviate multi-word directionals, so "Northwest" is
     // preserved as a keyword instead of being collapsed to "nw" and then stripped as a directional.
+    // If every remaining word is a suffix (e.g. "Lane Rd" where "Lane" is the street name),
+    // fall back to the first candidate rather than returning null.
     const rawKeyword = (() => {
       const streetPart = address.split(',')[0].trim().toLowerCase();
       const parts = streetPart.split(/\s+/);
@@ -197,15 +199,17 @@ export async function findStarbucksProject(
         'boulevard', 'highway', 'lane', 'place', 'court', 'parkway', 'circle',
         'terrace', 'trail',
       ]);
+      const candidates: string[] = [];
       for (let i = 0; i < parts.length; i++) {
         const w = parts[i];
         if (!w) continue;
         if (i === 0 && /^\d/.test(w)) continue;
         if (abbrevDirs.has(w)) continue;
-        if (suffs.has(w)) continue;
-        return w;
+        candidates.push(w);
       }
-      return null;
+      // Prefer first non-suffix word; fall back to first candidate if all are suffixes
+      // (handles "Lane Rd" where "Lane" is the street name, not a type).
+      return candidates.find(w => !suffs.has(w)) ?? candidates[0] ?? null;
     })();
 
     /**
