@@ -89,6 +89,21 @@ export async function deleteJob(id: string): Promise<void> {
   await setAllJobs(jobs.filter((j) => j.id !== id));
 }
 
+// ─── Keepalive ───
+
+const KEEPALIVE_KEY = 'starbucks:keepalive';
+
+// Redis Cloud free tier deletes databases with no write activity;
+// a daily timestamp write keeps it alive.
+export async function touchKeepalive(): Promise<string> {
+  const now = new Date().toISOString();
+  if (useRedis) {
+    const client = await getRedis();
+    await client.set(KEEPALIVE_KEY, now);
+  }
+  return now;
+}
+
 // ─── Technicians ───
 
 const DEFAULT_TECHS = ['Max Gelfman', 'Alexander Cardone', 'Alejandro Claudio', 'Jovens Toussaint'];
